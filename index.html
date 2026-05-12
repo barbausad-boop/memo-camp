@@ -4,6 +4,36 @@
   <title>Memo Camp</title>
 </head>
 <body>
-  <h1>Memo Camp fonctionne 🚀</h1>
+
+<h1>Memo Camp 🚀</h1>
+
+<button onclick="testConnexion()">
+Tester Supabase
+</button>
+
+<p id="resultat"></p>
+
+<script type="module">
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl = 'https://kcmccilvysxbofjmbktz.supabase.co'
+const supabaseKey = 'sb_publishable_hvooCYZnXQxo88-EptoXCA_CBqtmBFR'
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+window.testConnexion = async () => {
+
+const { data, error } = await supabase
+.from('test')
+.select('*')
+
+document.getElementById('resultat').innerText =
+error ? error.message : 'Connexion réussie ✅'
+
+}
+
+</script>
+
 </body>
 </html>
