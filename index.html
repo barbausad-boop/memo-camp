@@ -9,14 +9,20 @@
 
 <h1>Memo Camp 🚀</h1>
 
-<input id="nom" placeholder="Nom du participant">
+<input id="prenom" placeholder="Prénom">
+<br><br>
+
+<input id="nom" placeholder="Nom">
+<br><br>
+
+<input id="telephone" placeholder="Téléphone">
+<br><br>
+
+<input id="email" placeholder="Email">
+<br><br>
 
 <button onclick="ajouterParticipant()">
 Ajouter participant
-</button>
-
-<button onclick="testConnexion()">
-Tester Supabase
 </button>
 
 <p id="resultat"></p>
@@ -33,25 +39,27 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 window.ajouterParticipant = async () => {
 
-  const nom = document.getElementById('nom').value
+const first_name = document.getElementById('prenom').value
 
-  const { error } = await supabase
-    .from('test')
-    .insert([{ nom }])
+const last_name = document.getElementById('nom').value
 
-  document.getElementById('resultat').innerText =
-    error ? error.message : 'Participant ajouté ✅'
+const phone = document.getElementById('telephone').value
 
+const email = document.getElementById('email').value
+
+const { error } = await supabase
+.from('participants')
+.insert([
+{
+first_name,
+last_name,
+phone,
+email
 }
+])
 
-window.testConnexion = async () => {
-
-  const { error } = await supabase
-    .from('participants')
-    .select('*')
-
-  document.getElementById('resultat').innerText =
-    error ? error.message : 'Connexion réussie ✅'
+document.getElementById('resultat').innerText =
+error ? error.message : 'Participant ajouté ✅'
 
 }
 
