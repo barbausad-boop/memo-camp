@@ -1,99 +1,292 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="fr">
 <head>
-  <title>Memo Camp</title>
-</head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
+  <title>Memo Camp</title>
+
+  <style>
+
+    body{
+      font-family: Arial, sans-serif;
+      background:#f4f4f4;
+      padding:20px;
+    }
+
+    .container{
+      max-width:700px;
+      margin:auto;
+      background:white;
+      padding:25px;
+      border-radius:10px;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1{
+      text-align:center;
+      margin-bottom:30px;
+    }
+
+    h2{
+      margin-top:30px;
+      color:#333;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border:1px solid #ccc;
+      border-radius:6px;
+      box-sizing:border-box;
+    }
+
+    button{
+      width:100%;
+      padding:15px;
+      margin-top:25px;
+      border:none;
+      background:#0066cc;
+      color:white;
+      font-size:16px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#004999;
+    }
+
+    .message{
+      margin-top:20px;
+      text-align:center;
+      font-weight:bold;
+    }
+
+  </style>
+</head>
 <body>
 
-<h1>Memo Camp 🚀</h1>
+<div class="container">
 
-<input id="prenom" placeholder="Prénom">
-<br><br>
+  <h1>MEMO CAMP</h1>
 
-<input id="nom" placeholder="Nom">
-<br><br>
+  <form id="memoForm">
 
-<input id="telephone" placeholder="Téléphone">
-<br><br>
+    <h2>Informations Personnelles</h2>
 
-<input id="email" placeholder="Email">
-<br><br>
+    <input type="text" id="prenom" placeholder="Prénom" required>
+    <input type="text" id="nom" placeholder="Nom" required>
 
-<button onclick="ajouterParticipant()">
-Ajouter participant
-</button>
+    <input type="date" id="date_naissance">
 
-<p id="resultat"></p>
+    <input type="text" id="lieu_naissance" placeholder="Lieu de naissance">
 
-<h2>Participants enregistrés</h2>
+    <input type="text" id="telephone" placeholder="Téléphone">
 
-<div id="listeParticipants"></div>
+    <input type="email" id="email" placeholder="Email">
 
-<script type="module">
+    <input type="text" id="adresse" placeholder="Adresse">
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+    <input type="text" id="groupe_scout" placeholder="Groupe Scout">
 
-const supabaseUrl = 'https://kcmccilvysxbofjmbktz.supabase.co'
+    <input type="text" id="district" placeholder="District">
 
-const supabaseKey = 'sb_publishable_hvooCYZnXQxo88-EptoXCA_CBqtmBFR'
+    <input type="text" id="region" placeholder="Région">
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+    <h2>Formation Suivie</h2>
 
-window.ajouterParticipant = async () => {
+    <input type="text" id="stage" placeholder="Stage">
 
-const first_name = document.getElementById('prenom').value
-const last_name = document.getElementById('nom').value
-const phone = document.getElementById('telephone').value
-const email = document.getElementById('email').value
+    <input type="text" id="branche" placeholder="Branche">
 
-const { error } = await supabase
-.from('participants')
-.insert([
-{
-first_name,
-last_name,
-phone,
-email
-}
-])
+    <input type="text" id="sous_camp" placeholder="Sous-camp">
 
-document.getElementById('resultat').innerText =
-error ? error.message : 'Participant ajouté ✅'
+    <input type="text" id="promotion" placeholder="Promotion">
 
-chargerParticipants()
+    <input type="number" id="annee" placeholder="Année">
 
-}
+    <input type="text" id="lieu_formation" placeholder="Lieu de formation">
 
-async function chargerParticipants() {
+    <input type="text" id="formateur" placeholder="Formateur">
 
-const { data, error } = await supabase
-.from('participants')
-.select('*')
+    <button type="submit">Enregistrer</button>
 
-let html = ''
+  </form>
 
-data.forEach(participant => {
+  <div class="message" id="message"></div>
 
-html += `
-<div style="border:1px solid #ccc; padding:10px; margin:10px;">
-<b>${participant.first_name} ${participant.last_name}</b><br>
-📞 ${participant.phone}<br>
-📧 ${participant.email}
 </div>
-`
 
-})
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-document.getElementById('listeParticipants').innerHTML = html
+<script>
 
-}
+  // =====================================
+  // CONFIGURATION SUPABASE
+  // =====================================
 
-chargerParticipants()
+  const SUPABASE_URL = "VOTRE_URL_SUPABASE";
+  const SUPABASE_ANON_KEY = "VOTRE_CLE_ANON";
+
+  const client = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  // =====================================
+  // FORMULAIRE
+  // =====================================
+
+  const form = document.getElementById("memoForm");
+
+  form.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const message = document.getElementById("message");
+
+    message.innerHTML = "Enregistrement en cours...";
+
+    // ==========================
+    // DONNÉES PARTICIPANT
+    // ==========================
+
+    const participant = {
+
+      prenom:
+        document.getElementById("prenom").value,
+
+      nom:
+        document.getElementById("nom").value,
+
+      date_naissance:
+        document.getElementById("date_naissance").value,
+
+      lieu_naissance:
+        document.getElementById("lieu_naissance").value,
+
+      telephone:
+        document.getElementById("telephone").value,
+
+      email:
+        document.getElementById("email").value,
+
+      adresse:
+        document.getElementById("adresse").value,
+
+      groupe_scout:
+        document.getElementById("groupe_scout").value,
+
+      district:
+        document.getElementById("district").value,
+
+      region:
+        document.getElementById("region").value
+
+    };
+
+    // ==========================
+    // VÉRIFIER SI EXISTE
+    // ==========================
+
+    const { data: existingParticipant } =
+      await client
+      .from("participants")
+      .select("*")
+      .eq("prenom", participant.prenom)
+      .eq("nom", participant.nom)
+      .maybeSingle();
+
+    let participantId;
+
+    // ==========================
+    // SI EXISTE
+    // ==========================
+
+    if(existingParticipant){
+
+      participantId = existingParticipant.id;
+
+    } else {
+
+      // ==========================
+      // AJOUT PARTICIPANT
+      // ==========================
+
+      const { data, error } =
+        await client
+        .from("participants")
+        .insert([participant])
+        .select();
+
+      if(error){
+
+        message.innerHTML = error.message;
+        return;
+
+      }
+
+      participantId = data[0].id;
+
+    }
+
+    // ==========================
+    // DONNÉES FORMATION
+    // ==========================
+
+    const formation = {
+
+      participant_id: participantId,
+
+      stage:
+        document.getElementById("stage").value,
+
+      branche:
+        document.getElementById("branche").value,
+
+      sous_camp:
+        document.getElementById("sous_camp").value,
+
+      promotion:
+        document.getElementById("promotion").value,
+
+      annee:
+        document.getElementById("annee").value,
+
+      lieu_formation:
+        document.getElementById("lieu_formation").value,
+
+      formateur:
+        document.getElementById("formateur").value
+
+    };
+
+    // ==========================
+    // AJOUT FORMATION
+    // ==========================
+
+    const { error: formationError } =
+      await client
+      .from("formations_suivies")
+      .insert([formation]);
+
+    if(formationError){
+
+      message.innerHTML = formationError.message;
+      return;
+
+    }
+
+    message.innerHTML =
+      "Participant enregistré avec succès.";
+
+    form.reset();
+
+  });
 
 </script>
 
 </body>
-
 </html>
