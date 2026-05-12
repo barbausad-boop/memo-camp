@@ -47,7 +47,7 @@ window.ajouterParticipant = async () => {
 window.testConnexion = async () => {
 
   const { error } = await supabase
-    .from('test')
+    .from('participants')
     .select('*')
 
   document.getElementById('resultat').innerText =
