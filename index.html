@@ -1,180 +1,190 @@
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MEMO-CAMP</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+    body{
+      font-family: Arial;
+      background:#f4f4f4;
+      padding:20px;
+    }
+
+    h1{
+      color:#0b5ed7;
+    }
+
+    .card{
+      background:white;
+      padding:20px;
+      border-radius:10px;
+      max-width:700px;
+      margin:auto;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input, select, button{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border-radius:8px;
+      border:1px solid #ccc;
+    }
+
+    button{
+      background:#0b5ed7;
+      color:white;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#084298;
+    }
+
+    table{
+      width:100%;
+      margin-top:20px;
+      border-collapse: collapse;
+      background:white;
+    }
+
+    th, td{
+      border:1px solid #ddd;
+      padding:10px;
+      text-align:left;
+    }
+
+    th{
+      background:#0b5ed7;
+      color:white;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>MEMO-CAMP</h1>
+
+  <input type="text" id="first_name" placeholder="Prénom">
+  <input type="text" id="last_name" placeholder="Nom">
+  <input type="text" id="groupe_scout" placeholder="Groupe Scout">
+  <input type="text" id="district" placeholder="District">
+  <input type="text" id="fonction" placeholder="Fonction">
+
+  <input type="date" id="date_naissance">
+
+  <input type="text" id="lieu_naissance" placeholder="Lieu de naissance">
+
+  <input type="text" id="phone" placeholder="Téléphone">
+  <input type="email" id="email" placeholder="Email">
+
+  <button onclick="ajouterParticipant()">
+    Enregistrer Participant
+  </button>
+
+  <input type="text" id="search" placeholder="Recherche par nom..." onkeyup="chargerParticipants()">
+
+  <table>
+    <thead>
+      <tr>
+        <th>Prénom</th>
+        <th>Nom</th>
+        <th>District</th>
+        <th>Fonction</th>
+      </tr>
+    </thead>
+
+    <tbody id="tableBody"></tbody>
+  </table>
+
+</div>
 
 <script>
 
-  // =====================================
-  // CONFIGURATION SUPABASE
-  // =====================================
+const SUPABASE_URL = "https://gdjenoyyclazwbqvdmcx.supabase.co";
 
-  const SUPABASE_URL = "https://kcmccilvysxbofjmbktz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
 
-  const SUPABASE_ANON_KEY =
-    "sb_publishable_hvooCYZnXQxo88-EptoXCA_CBqtmBFR";
+const client = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-  const client = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+async function ajouterParticipant(){
 
-  // =====================================
-  // FORMULAIRE
-  // =====================================
+  const participant = {
+    first_name: document.getElementById("first_name").value,
+    last_name: document.getElementById("last_name").value,
+    groupe_scout: document.getElementById("groupe_scout").value,
+    district: document.getElementById("district").value,
+    fonction: document.getElementById("fonction").value,
+    date_naissance: document.getElementById("date_naissance").value,
+    lieu_naissance: document.getElementById("lieu_naissance").value,
+    phone: document.getElementById("phone").value,
+    email: document.getElementById("email").value
+  };
 
-  const form = document.getElementById("memoForm");
+  const { error } = await client
+    .from("Participants")
+    .insert([participant]);
 
-  form.addEventListener("submit", async (e) => {
+  if(error){
+    alert("Erreur : " + error.message);
+    return;
+  }
 
-    e.preventDefault();
+  alert("Participant enregistré");
 
-    const message =
-      document.getElementById("message");
+  chargerParticipants();
+}
 
-    message.innerHTML =
-      "Enregistrement en cours...";
+async function chargerParticipants(){
 
-    // =====================================
-    // DONNÉES PARTICIPANT
-    // =====================================
+  const recherche = document
+    .getElementById("search")
+    .value;
 
-    const participant = {
+  let query = client
+    .from("Participants")
+    .select("*");
 
-      first_name:
-        document.getElementById("prenom").value,
+  if(recherche){
+    query = query.ilike("last_name", `%${recherche}%`);
+  }
 
-      last_name:
-        document.getElementById("nom").value,
+  const { data, error } = await query;
 
-      date_naissance:
-        document.getElementById("date_naissance").value,
+  if(error){
+    console.log(error);
+    return;
+  }
 
-      lieu_naissance:
-        document.getElementById("lieu_naissance").value,
+  const table = document.getElementById("tableBody");
 
-      phone:
-        document.getElementById("telephone").value,
+  table.innerHTML = "";
 
-      email:
-        document.getElementById("email").value,
+  data.forEach(participant => {
 
-      adresse:
-        document.getElementById("adresse").value,
-
-      groupe_scout:
-        document.getElementById("groupe_scout").value,
-
-      district:
-        document.getElementById("district").value,
-
-      region:
-        document.getElementById("region").value
-
-    };
-
-    // =====================================
-    // RECHERCHER PARTICIPANT EXISTANT
-    // =====================================
-
-    const { data: existingParticipant } =
-      await client
-      .from("participants")
-      .select("*")
-      .eq("first_name", participant.first_name)
-      .eq("last_name", participant.last_name)
-      .maybeSingle();
-
-    let participantId;
-
-    // =====================================
-    // SI LE PARTICIPANT EXISTE
-    // =====================================
-
-    if(existingParticipant){
-
-      participantId = existingParticipant.id;
-
-    } else {
-
-      // =====================================
-      // AJOUT PARTICIPANT
-      // =====================================
-
-      const { data, error } =
-        await client
-        .from("participants")
-        .insert([participant])
-        .select();
-
-      if(error){
-
-        message.innerHTML = error.message;
-        return;
-
-      }
-
-      participantId = data[0].id;
-
-    }
-
-    // =====================================
-    // DONNÉES FORMATION
-    // =====================================
-
-    const formation = {
-
-      participant_id: participantId,
-
-      stage:
-        document.getElementById("stage").value,
-
-      branche:
-        document.getElementById("branche").value,
-
-      sous_camp:
-        document.getElementById("sous_camp").value,
-
-      promotion:
-        document.getElementById("promotion").value,
-
-      annee:
-        parseInt(
-          document.getElementById("annee").value
-        ),
-
-      lieu_formation:
-        document.getElementById("lieu_formation").value,
-
-      formateur:
-        document.getElementById("formateur").value
-
-    };
-
-    // =====================================
-    // AJOUT FORMATION
-    // =====================================
-
-    const { error: formationError } =
-      await client
-      .from("formations_suivies")
-      .insert([formation]);
-
-    if(formationError){
-
-      message.innerHTML =
-        formationError.message;
-
-      return;
-
-    }
-
-    // =====================================
-    // SUCCÈS
-    // =====================================
-
-    message.innerHTML =
-      "Participant enregistré avec succès.";
-
-    form.reset();
-
+    table.innerHTML += `
+      <tr>
+        <td>${participant.first_name || ""}</td>
+        <td>${participant.last_name || ""}</td>
+        <td>${participant.district || ""}</td>
+        <td>${participant.fonction || ""}</td>
+      </tr>
+    `;
   });
+}
+
+chargerParticipants();
 
 </script>
+
+</body>
+</html>
