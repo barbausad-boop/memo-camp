@@ -42,8 +42,6 @@ const { error } = await supabase
 document.getElementById('resultat').innerText =
 error ? error.message : 'Participant ajouté ✅'
 
-  }
-
 const { data, error } = await supabase
 .from('test')
 .select('*')
