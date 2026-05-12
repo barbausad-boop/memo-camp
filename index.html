@@ -1,124 +1,3 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-  <title>Memo Camp</title>
-
-  <style>
-
-    body{
-      font-family: Arial, sans-serif;
-      background:#f4f4f4;
-      padding:20px;
-    }
-
-    .container{
-      max-width:700px;
-      margin:auto;
-      background:white;
-      padding:25px;
-      border-radius:10px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h1{
-      text-align:center;
-      margin-bottom:30px;
-    }
-
-    h2{
-      margin-top:30px;
-      color:#333;
-    }
-
-    input{
-      width:100%;
-      padding:12px;
-      margin-top:10px;
-      border:1px solid #ccc;
-      border-radius:6px;
-      box-sizing:border-box;
-    }
-
-    button{
-      width:100%;
-      padding:15px;
-      margin-top:25px;
-      border:none;
-      background:#0066cc;
-      color:white;
-      font-size:16px;
-      border-radius:6px;
-      cursor:pointer;
-    }
-
-    button:hover{
-      background:#004999;
-    }
-
-    .message{
-      margin-top:20px;
-      text-align:center;
-      font-weight:bold;
-    }
-
-  </style>
-</head>
-<body>
-
-<div class="container">
-
-  <h1>MEMO CAMP</h1>
-
-  <form id="memoForm">
-
-    <h2>Informations Personnelles</h2>
-
-    <input type="text" id="prenom" placeholder="Prénom" required>
-    <input type="text" id="nom" placeholder="Nom" required>
-
-    <input type="date" id="date_naissance">
-
-    <input type="text" id="lieu_naissance" placeholder="Lieu de naissance">
-
-    <input type="text" id="telephone" placeholder="Téléphone">
-
-    <input type="email" id="email" placeholder="Email">
-
-    <input type="text" id="adresse" placeholder="Adresse">
-
-    <input type="text" id="groupe_scout" placeholder="Groupe Scout">
-
-    <input type="text" id="district" placeholder="District">
-
-    <input type="text" id="region" placeholder="Région">
-
-    <h2>Formation Suivie</h2>
-
-    <input type="text" id="stage" placeholder="Stage">
-
-    <input type="text" id="branche" placeholder="Branche">
-
-    <input type="text" id="sous_camp" placeholder="Sous-camp">
-
-    <input type="text" id="promotion" placeholder="Promotion">
-
-    <input type="number" id="annee" placeholder="Année">
-
-    <input type="text" id="lieu_formation" placeholder="Lieu de formation">
-
-    <input type="text" id="formateur" placeholder="Formateur">
-
-    <button type="submit">Enregistrer</button>
-
-  </form>
-
-  <div class="message" id="message"></div>
-
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <script>
@@ -128,7 +7,9 @@
   // =====================================
 
   const SUPABASE_URL = "https://kcmccilvysxbofjmbktz.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_hvooCYZnXQxo88-EptoXCA_CBqtmBFR";
+
+  const SUPABASE_ANON_KEY =
+    "sb_publishable_hvooCYZnXQxo88-EptoXCA_CBqtmBFR";
 
   const client = supabase.createClient(
     SUPABASE_URL,
@@ -145,20 +26,22 @@
 
     e.preventDefault();
 
-    const message = document.getElementById("message");
+    const message =
+      document.getElementById("message");
 
-    message.innerHTML = "Enregistrement en cours...";
+    message.innerHTML =
+      "Enregistrement en cours...";
 
-    // ==========================
+    // =====================================
     // DONNÉES PARTICIPANT
-    // ==========================
+    // =====================================
 
     const participant = {
 
-      prenom:
+      first_name:
         document.getElementById("prenom").value,
 
-      nom:
+      last_name:
         document.getElementById("nom").value,
 
       date_naissance:
@@ -167,7 +50,7 @@
       lieu_naissance:
         document.getElementById("lieu_naissance").value,
 
-      telephone:
+      phone:
         document.getElementById("telephone").value,
 
       email:
@@ -187,23 +70,23 @@
 
     };
 
-    // ==========================
-    // VÉRIFIER SI EXISTE
-    // ==========================
+    // =====================================
+    // RECHERCHER PARTICIPANT EXISTANT
+    // =====================================
 
     const { data: existingParticipant } =
       await client
       .from("participants")
       .select("*")
-      .eq("prenom", participant.prenom)
-      .eq("nom", participant.nom)
+      .eq("first_name", participant.first_name)
+      .eq("last_name", participant.last_name)
       .maybeSingle();
 
     let participantId;
 
-    // ==========================
-    // SI EXISTE
-    // ==========================
+    // =====================================
+    // SI LE PARTICIPANT EXISTE
+    // =====================================
 
     if(existingParticipant){
 
@@ -211,9 +94,9 @@
 
     } else {
 
-      // ==========================
+      // =====================================
       // AJOUT PARTICIPANT
-      // ==========================
+      // =====================================
 
       const { data, error } =
         await client
@@ -232,9 +115,9 @@
 
     }
 
-    // ==========================
+    // =====================================
     // DONNÉES FORMATION
-    // ==========================
+    // =====================================
 
     const formation = {
 
@@ -253,7 +136,9 @@
         document.getElementById("promotion").value,
 
       annee:
-        document.getElementById("annee").value,
+        parseInt(
+          document.getElementById("annee").value
+        ),
 
       lieu_formation:
         document.getElementById("lieu_formation").value,
@@ -263,9 +148,9 @@
 
     };
 
-    // ==========================
+    // =====================================
     // AJOUT FORMATION
-    // ==========================
+    // =====================================
 
     const { error: formationError } =
       await client
@@ -274,10 +159,16 @@
 
     if(formationError){
 
-      message.innerHTML = formationError.message;
+      message.innerHTML =
+        formationError.message;
+
       return;
 
     }
+
+    // =====================================
+    // SUCCÈS
+    // =====================================
 
     message.innerHTML =
       "Participant enregistré avec succès.";
@@ -287,6 +178,3 @@
   });
 
 </script>
-
-</body>
-</html>
