@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Memo Camp</title>
 </head>
-<<h1>Memo Camp 🚀</h1>
+
+<body>
+
+<h1>Memo Camp 🚀</h1>
 
 <input id="nom" placeholder="Nom du participant">
 
 <button onclick="ajouterParticipant()">
 Ajouter participant
 </button>
-
-<p id="resultat"></p>>
-
-<h1>Memo Camp 🚀</h1>
 
 <button onclick="testConnexion()">
 Tester Supabase
@@ -26,28 +26,32 @@ Tester Supabase
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
 const supabaseUrl = 'https://kcmccilvysxbofjmbktz.supabase.co'
+
 const supabaseKey = 'sb_publishable_hvooCYZnXQxo88-EptoXCA_CBqtmBFR'
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+window.ajouterParticipant = async () => {
+
+  const nom = document.getElementById('nom').value
+
+  const { error } = await supabase
+    .from('test')
+    .insert([{ nom }])
+
+  document.getElementById('resultat').innerText =
+    error ? error.message : 'Participant ajouté ✅'
+
+}
+
 window.testConnexion = async () => {
-  window.ajouterParticipant = async () => {
 
-const nom = document.getElementById('nom').value
+  const { error } = await supabase
+    .from('test')
+    .select('*')
 
-const { error } = await supabase
-.from('test')
-.insert([{ nom }])
-
-document.getElementById('resultat').innerText =
-error ? error.message : 'Participant ajouté ✅'
-
-const { data, error } = await supabase
-.from('test')
-.select('*')
-
-document.getElementById('resultat').innerText =
-error ? error.message : 'Connexion réussie ✅'
+  document.getElementById('resultat').innerText =
+    error ? error.message : 'Connexion réussie ✅'
 
 }
 
