@@ -8,13 +8,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <style>
+
     body{
       font-family: Arial;
       background:#f4f4f4;
       padding:20px;
     }
 
-    h1{
+    h1, h2{
       color:#0b5ed7;
     }
 
@@ -22,7 +23,7 @@
       background:white;
       padding:20px;
       border-radius:10px;
-      max-width:700px;
+      max-width:900px;
       margin:auto;
       box-shadow:0 0 10px rgba(0,0,0,0.1);
     }
@@ -33,6 +34,7 @@
       margin-top:10px;
       border-radius:8px;
       border:1px solid #ccc;
+      box-sizing:border-box;
     }
 
     button{
@@ -63,12 +65,19 @@
       background:#0b5ed7;
       color:white;
     }
+
+    hr{
+      margin-top:30px;
+      margin-bottom:30px;
+    }
+
   </style>
 </head>
 
 <body>
 
 <div class="card">
+
   <h1>MEMO-CAMP</h1>
 
   <input type="text" id="first_name" placeholder="Prénom">
@@ -82,17 +91,25 @@
   <input type="text" id="lieu_naissance" placeholder="Lieu de naissance">
 
   <input type="text" id="phone" placeholder="Téléphone">
+
   <input type="email" id="email" placeholder="Email">
 
   <button onclick="ajouterParticipant()">
     Enregistrer Participant
   </button>
 
-  <input type="text" id="search" placeholder="Recherche par nom..." onkeyup="chargerParticipants()">
+  <input
+    type="text"
+    id="search"
+    placeholder="Recherche par nom..."
+    onkeyup="chargerParticipants()"
+  >
 
   <table>
+
     <thead>
       <tr>
+        <th>ID</th>
         <th>Prénom</th>
         <th>Nom</th>
         <th>District</th>
@@ -101,15 +118,87 @@
     </thead>
 
     <tbody id="tableBody"></tbody>
+
+  </table>
+
+  <hr>
+
+  <h2>Ajouter une Formation</h2>
+
+  <input
+    type="number"
+    id="participant_id"
+    placeholder="ID Participant"
+  >
+
+  <select id="stage">
+
+    <option value="">Choisir Stage</option>
+
+    <option value="CI">CI</option>
+
+    <option value="CEP">CEP</option>
+
+    <option value="Camp École">Camp École</option>
+
+  </select>
+
+  <input
+    type="number"
+    id="annee_stage"
+    placeholder="Année de stage"
+  >
+
+  <input
+    type="text"
+    id="lieu_stage"
+    placeholder="Lieu de stage"
+  >
+
+  <button onclick="ajouterFormation()">
+    Ajouter Formation
+  </button>
+
+  <hr>
+
+  <h2>Filtrer par année</h2>
+
+  <input
+    type="number"
+    id="filtre_annee"
+    placeholder="Exemple : 2024"
+  >
+
+  <button onclick="filtrerParAnnee()">
+    Filtrer
+  </button>
+
+  <table>
+
+    <thead>
+
+      <tr>
+        <th>Participant</th>
+        <th>Stage</th>
+        <th>Année</th>
+        <th>Lieu</th>
+      </tr>
+
+    </thead>
+
+    <tbody id="formationTable"></tbody>
+
   </table>
 
 </div>
 
 <script>
 
-const SUPABASE_URL = "https://gdjenoyyclazwbqvdmcx.supabase.co";
+const SUPABASE_URL =
+"https://gdjenoyyclazwbqvdmcx.supabase.co";
 
-const SUPABASE_KEY = "sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
+const SUPABASE_KEY =
+"sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
 
 const client = supabase.createClient(
   SUPABASE_URL,
@@ -119,15 +208,33 @@ const client = supabase.createClient(
 async function ajouterParticipant(){
 
   const participant = {
-    first_name: document.getElementById("first_name").value,
-    last_name: document.getElementById("last_name").value,
-    groupe_scout: document.getElementById("groupe_scout").value,
-    district: document.getElementById("district").value,
-    fonction: document.getElementById("fonction").value,
-    date_naissance: document.getElementById("date_naissance").value,
-    lieu_naissance: document.getElementById("lieu_naissance").value,
-    phone: document.getElementById("phone").value,
-    email: document.getElementById("email").value
+
+    first_name:
+      document.getElementById("first_name").value,
+
+    last_name:
+      document.getElementById("last_name").value,
+
+    groupe_scout:
+      document.getElementById("groupe_scout").value,
+
+    district:
+      document.getElementById("district").value,
+
+    fonction:
+      document.getElementById("fonction").value,
+
+    date_naissance:
+      document.getElementById("date_naissance").value,
+
+    lieu_naissance:
+      document.getElementById("lieu_naissance").value,
+
+    phone:
+      document.getElementById("phone").value,
+
+    email:
+      document.getElementById("email").value
   };
 
   const { error } = await client
@@ -135,7 +242,9 @@ async function ajouterParticipant(){
     .insert([participant]);
 
   if(error){
+
     alert("Erreur : " + error.message);
+
     return;
   }
 
@@ -146,26 +255,33 @@ async function ajouterParticipant(){
 
 async function chargerParticipants(){
 
-  const recherche = document
-    .getElementById("search")
-    .value;
+  const recherche =
+    document.getElementById("search").value;
 
   let query = client
     .from("Participants")
-    .select("*");
+    .select("*")
+    .order("id", { ascending:true });
 
   if(recherche){
-    query = query.ilike("last_name", `%${recherche}%`);
+
+    query = query.ilike(
+      "last_name",
+      `%${recherche}%`
+    );
   }
 
   const { data, error } = await query;
 
   if(error){
+
     console.log(error);
+
     return;
   }
 
-  const table = document.getElementById("tableBody");
+  const table =
+    document.getElementById("tableBody");
 
   table.innerHTML = "";
 
@@ -173,10 +289,101 @@ async function chargerParticipants(){
 
     table.innerHTML += `
       <tr>
+        <td>${participant.id}</td>
         <td>${participant.first_name || ""}</td>
         <td>${participant.last_name || ""}</td>
         <td>${participant.district || ""}</td>
         <td>${participant.fonction || ""}</td>
+      </tr>
+    `;
+  });
+}
+
+async function ajouterFormation(){
+
+  const formation = {
+
+    participant_id:
+      parseInt(
+        document.getElementById("participant_id").value
+      ),
+
+    stage:
+      document.getElementById("stage").value,
+
+    annee_de_stage:
+      parseInt(
+        document.getElementById("annee_stage").value
+      ),
+
+    lieu_de_stage:
+      document.getElementById("lieu_stage").value
+  };
+
+  const { error } = await client
+    .from("Formation")
+    .insert([formation]);
+
+  if(error){
+
+    alert("Erreur : " + error.message);
+
+    return;
+  }
+
+  alert("Formation ajoutée");
+}
+
+async function filtrerParAnnee(){
+
+  const annee =
+    parseInt(
+      document.getElementById("filtre_annee").value
+    );
+
+  const { data, error } = await client
+    .from("Formation")
+    .select(`
+      stage,
+      annee_de_stage,
+      lieu_de_stage,
+      Participants (
+        first_name,
+        last_name
+      )
+    `)
+    .eq("annee_de_stage", annee);
+
+  if(error){
+
+    console.log(error);
+
+    alert(error.message);
+
+    return;
+  }
+
+  const table =
+    document.getElementById("formationTable");
+
+  table.innerHTML = "";
+
+  data.forEach(item => {
+
+    table.innerHTML += `
+      <tr>
+
+        <td>
+          ${item.Participants?.first_name || ""}
+          ${item.Participants?.last_name || ""}
+        </td>
+
+        <td>${item.stage || ""}</td>
+
+        <td>${item.annee_de_stage || ""}</td>
+
+        <td>${item.lieu_de_stage || ""}</td>
+
       </tr>
     `;
   });
