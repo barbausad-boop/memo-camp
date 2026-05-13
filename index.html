@@ -1,4 +1,5 @@
 <script>
+
 const SUPABASE_URL =
 "https://gdjenoyyclazwbqvdmcx.supabase.co";
 
@@ -12,98 +13,34 @@ const client = supabase.createClient(
 
 async function enregistrerDossier(){
 
-  const first_name =
-    document.getElementById("first_name").value.trim();
-
-  const last_name =
-    document.getElementById("last_name").value.trim();
-
-  const date_naissance =
-    document.getElementById("date_naissance").value.trim();
-
-  const lieu_naissance =
-    document.getElementById("lieu_naissance").value.trim();
-
-  const phone =
-    document.getElementById("phone").value.trim();
-
-  const email =
-    document.getElementById("email").value.trim();
-
-  const groupe_scout =
-    document.getElementById("groupe_scout").value.trim();
-
-  const district =
-    document.getElementById("district").value.trim();
-
-  const fonction =
-    document.getElementById("fonction").value.trim();
-
-  const stage =
-    document.getElementById("stage").value.trim();
-
-  const branche =
-    document.getElementById("branche").value.trim();
-
-  const annee_stage =
-    document.getElementById("annee_stage").value.trim();
-
-  const lieu_stage =
-    document.getElementById("lieu_stage").value.trim();
-
-  // Vérification champs obligatoires
-  if(
-    !first_name ||
-    !last_name ||
-    !date_naissance ||
-    !lieu_naissance ||
-    !phone ||
-    !email ||
-    !groupe_scout ||
-    !district ||
-    !fonction ||
-    !stage ||
-    !branche ||
-    !annee_stage ||
-    !lieu_stage
-  ){
-    alert("Tous les champs sont obligatoires");
-    return;
-  }
-
-  // Vérification doublon
-  const { data: existingParticipant } = await client
-    .from("Participants")
-    .select("*")
-    .eq("first_name", first_name)
-    .eq("last_name", last_name)
-    .eq("phone", phone);
-
-  if(existingParticipant && existingParticipant.length > 0){
-    alert("Participant déjà enregistré");
-    return;
-  }
-
-  // Création participant
   const participant = {
 
-    first_name: first_name,
+    first_name:
+      document.getElementById("first_name").value,
 
-    last_name: last_name,
+    last_name:
+      document.getElementById("last_name").value,
 
-    groupe_scout: groupe_scout,
+    groupe_scout:
+      document.getElementById("groupe_scout").value,
 
-    district: district,
+    district:
+      document.getElementById("district").value,
 
-    fonction: fonction,
+    fonction:
+      document.getElementById("fonction").value,
 
-    date_naissance: date_naissance,
+    date_naissance:
+      document.getElementById("date_naissance").value,
 
-    lieu_naissance: lieu_naissance,
+    lieu_naissance:
+      document.getElementById("lieu_naissance").value,
 
-    phone: phone,
+    phone:
+      document.getElementById("phone").value,
 
-    email: email
+    email:
+      document.getElementById("email").value
   };
 
   const { data, error } = await client
@@ -118,18 +55,21 @@ async function enregistrerDossier(){
 
   const participantId = data[0].id;
 
-  // Création formation
   const formation = {
 
     participant_id: participantId,
 
-    stage: stage,
+    stage:
+      document.getElementById("stage").value,
 
-    branche: branche,
+    branche:
+      document.getElementById("branche").value,
 
-    annee_stage: annee_stage,
+    annee_stage:
+      document.getElementById("annee_stage").value,
 
-    lieu_stage: lieu_stage
+    lieu_stage:
+      document.getElementById("lieu_stage").value
   };
 
   const { error: formationError } = await client
@@ -143,7 +83,7 @@ async function enregistrerDossier(){
 
   alert("Dossier enregistré");
 
-  // Vider formulaire
+  // vider formulaire
   document.getElementById("first_name").value = "";
   document.getElementById("last_name").value = "";
   document.getElementById("date_naissance").value = "";
@@ -176,7 +116,7 @@ async function chargerParticipants(){
 
     query = query.ilike(
       "last_name",
-      %${recherche}%
+      `%${recherche}%`
     );
   }
 
@@ -267,4 +207,5 @@ async function filtrerParAnnee(){
 chargerParticipants();
 
 filtrerParAnnee();
+
 </script>
