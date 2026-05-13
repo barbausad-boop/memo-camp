@@ -8,9 +8,14 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ============================================
 document.addEventListener('DOMContentLoaded', async function() {
   console.log("Application chargée v2");
-  await chargerRegions();
-  await mettreAJourStatistiques();
-  await chargerParticipants();
+  try {
+    await chargerRegions();
+    console.log("Régions chargées");
+    await mettreAJourStatistiques();
+    console.log("Statistiques mises à jour");
+  } catch (error) {
+    console.error("Erreur initialisation:", error);
+  }
 });
 
 // ============================================
@@ -40,19 +45,37 @@ function showTab(tabId) {
 // ============================================
 async function chargerRegions() {
   try {
+    console.log("Chargement des régions...");
+    
     const { data, error } = await client
       .from('regions')
       .select('id, nom')
       .order('nom');
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erreur Supabase:", error);
+      throw error;
+    }
+
+    console.log("Régions reçues:", data);
 
     const select = document.getElementById('region_id');
+    if (!select) {
+      console.error("Select region_id non trouvé!");
+      return;
+    }
+
     select.innerHTML = '<option value="">-- Sélectionner une région --</option>';
     
     data.forEach(region => {
-      select.innerHTML += `<option value="${region.id}">${region.nom}</option>`;
+      const option = document.createElement('option');
+      option.value = region.id;
+      option.textContent = region.nom;
+      select.appendChild(option);
+      console.log("Région ajoutée:", region.nom);
     });
+
+    console.log("Régions chargées avec succès");
   } catch (error) {
     console.error("Erreur chargement régions:", error);
   }
@@ -65,6 +88,8 @@ async function chargerDistricts() {
   try {
     const regionId = document.getElementById('region_id').value;
     
+    console.log("Région sélectionnée:", regionId);
+
     if (!regionId) {
       document.getElementById('district_id').innerHTML = '<option value="">-- Sélectionner un district --</option>';
       return;
@@ -73,17 +98,26 @@ async function chargerDistricts() {
     const { data, error } = await client
       .from('districts')
       .select('id, nom')
-      .eq('region_id', regionId)
+      .eq('region_id', parseInt(regionId))
       .order('nom');
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erreur Supabase districts:", error);
+      throw error;
+    }
+
+    console.log("Districts reçus:", data);
 
     const select = document.getElementById('district_id');
     select.innerHTML = '<option value="">-- Sélectionner un district --</option>';
     
     data.forEach(district => {
-      select.innerHTML += `<option value="${district.id}">${district.nom}</option>`;
+      const option = document.createElement('option');
+      option.value = district.id;
+      option.textContent = district.nom;
+      select.appendChild(option);
     });
+
   } catch (error) {
     console.error("Erreur chargement districts:", error);
   }
@@ -120,7 +154,7 @@ function validerHierarchieStages() {
   // Vérifier que ce n'est pas un trou (ex: C.I et C.N.B sans C.E.P)
   for (let i = 0; i < checks.length - 1; i++) {
     if (!checks[i] && checks[i + 1]) {
-      alert(`❌ Erreur : Vous devez compléter les stages en ordre (${stages[i + 1]} ne peut pas être suivi avant ${stages[i]})`);
+      alert(`❌ Erreur : Vous devez compléter les stages en ordre`);
       return false;
     }
   }
@@ -261,7 +295,7 @@ async function enregistrerParticipant() {
 // ============================================
 async function chargerParticipants() {
   try {
-    const recherche = document.getElementById('search').value.trim();
+    const recherche = document.getElementById('search') ? document.getElementById('search').value.trim() : '';
 
     let query = client
       .from('parcours_participant')
@@ -305,7 +339,7 @@ async function chargerParticipants() {
     tableBody.innerHTML = '';
 
     if (Object.keys(participants).length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">Aucun participant</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">Aucun participant</td></tr>';
       return;
     }
 
@@ -315,8 +349,6 @@ async function chargerParticipants() {
         <tr>
           <td>${p.first_name || '-'}</td>
           <td>${p.last_name || '-'}</td>
-          <td>${p.groupe_base || '-'}</td>
-          <td>${p.fonction_actuelle || '-'}</td>
           <td>${stages || 'Aucun'}</td>
           <td>
             <button onclick="afficherProfil(${p.id})" class="btn-small">👁️ Voir</button>
@@ -328,7 +360,7 @@ async function chargerParticipants() {
   } catch (error) {
     console.error("Erreur:", error);
     document.getElementById('tableBody').innerHTML = 
-      `<tr><td colspan="7" style="text-align: center; color: red;">Erreur: ${error.message}</td></tr>`;
+      `<tr><td colspan="4" style="text-align: center; color: red;">Erreur: ${error.message}</td></tr>`;
   }
 }
 
@@ -344,28 +376,25 @@ async function afficherProfil(participantId) {
 
     if (error) throw error;
 
+    if (data.length === 0) {
+      alert("Profil non trouvé");
+      return;
+    }
+
     const p = data[0];
-    let profil = `
-    <h3>${p.first_name} ${p.last_name}</h3>
-    <p><strong>Fonction:</strong> ${p.fonction_actuelle || '-'}</p>
-    <p><strong>Groupe:</strong> ${p.groupe_base || '-'}</p>
-    <h4>Parcours de formation:</h4>
-    <ul>
-    `;
+    let profil = `${p.first_name} ${p.last_name}\n`;
+    profil += `Fonction: ${p.fonction_actuelle || '-'}\n`;
+    profil += `Groupe: ${p.groupe_base || '-'}\n\n`;
+    profil += `Parcours:\n`;
 
     data.forEach(row => {
       if (row.stage_code) {
-        profil += `
-          <li>
-            <strong>${row.stage_code}</strong> (${row.annee_stage})
-            ${row.branche_nom ? ` - Branche: ${row.branche_nom}` : ''}
-            ${row.lieu_stage ? ` - Lieu: ${row.lieu_stage}` : ''}
-          </li>
-        `;
+        profil += `- ${row.stage_code} (${row.annee_stage})`;
+        if (row.branche_nom) profil += ` - Branche: ${row.branche_nom}`;
+        if (row.lieu_stage) profil += ` - Lieu: ${row.lieu_stage}`;
+        profil += `\n`;
       }
     });
-
-    profil += `</ul>`;
 
     alert(profil);
 
@@ -380,18 +409,12 @@ async function afficherProfil(participantId) {
 // ============================================
 async function chargerPromotions() {
   try {
-    const stageFilter = document.getElementById('filtre_stage').value;
-
-    let query = client
+    const { data, error } = await client
       .from('parcours_participant')
       .select('*')
-      .not('stage_code', 'is', null);
-
-    if (stageFilter) {
-      query = query.eq('stage_code', stageFilter);
-    }
-
-    const { data, error } = await query.order('annee', { ascending: false }).order('stage_ordre');
+      .not('stage_code', 'is', null)
+      .order('annee_stage', { ascending: false })
+      .order('stage_ordre', { ascending: true });
 
     if (error) throw error;
 
@@ -462,11 +485,15 @@ async function chargerStatistiques() {
       .group_by('stage_id');
 
     let stageHtml = '<ul>';
-    stageStats.forEach(stat => {
-      if (stat.stage_id) {
-        stageHtml += `<li>${stat.stage_id.code}: ${stat.count} participants</li>`;
-      }
-    });
+    if (stageStats && stageStats.length > 0) {
+      stageStats.forEach(stat => {
+        if (stat.stage_id) {
+          stageHtml += `<li>${stat.stage_id.code}: ${stat.count} participants</li>`;
+        }
+      });
+    } else {
+      stageHtml += '<li>Aucune donnée</li>';
+    }
     stageHtml += '</ul>';
     document.getElementById('stats_by_stage').innerHTML = stageHtml;
 
@@ -478,11 +505,15 @@ async function chargerStatistiques() {
       .group_by('branche_id');
 
     let branchHtml = '<ul>';
-    branchStats.forEach(stat => {
-      if (stat.branche_id) {
-        branchHtml += `<li>${stat.branche_id.nom}: ${stat.count} participants</li>`;
-      }
-    });
+    if (branchStats && branchStats.length > 0) {
+      branchStats.forEach(stat => {
+        if (stat.branche_id) {
+          branchHtml += `<li>${stat.branche_id.nom}: ${stat.count} participants</li>`;
+        }
+      });
+    } else {
+      branchHtml += '<li>Aucune donnée</li>';
+    }
     branchHtml += '</ul>';
     document.getElementById('stats_by_branch').innerHTML = branchHtml;
 
@@ -494,15 +525,19 @@ async function chargerStatistiques() {
       .group_by('region_id');
 
     let regionHtml = '<ul>';
-    regionStats.forEach(stat => {
-      if (stat.region_id) {
-        regionHtml += `<li>${stat.region_id.nom}: ${stat.count} participants</li>`;
-      }
-    });
+    if (regionStats && regionStats.length > 0) {
+      regionStats.forEach(stat => {
+        if (stat.region_id) {
+          regionHtml += `<li>${stat.region_id.nom}: ${stat.count} participants</li>`;
+        }
+      });
+    } else {
+      regionHtml += '<li>Aucune donnée</li>';
+    }
     regionHtml += '</ul>';
     document.getElementById('stats_by_region').innerHTML = regionHtml;
 
-    // Par district (Thiès)
+    // Par district
     const { data: districtStats } = await client
       .from('Participants')
       .select('district_id(nom), COUNT(*)', { count: 'exact' })
@@ -510,11 +545,15 @@ async function chargerStatistiques() {
       .group_by('district_id');
 
     let districtHtml = '<ul>';
-    districtStats.forEach(stat => {
-      if (stat.district_id) {
-        districtHtml += `<li>${stat.district_id.nom}: ${stat.count} participants</li>`;
-      }
-    });
+    if (districtStats && districtStats.length > 0) {
+      districtStats.forEach(stat => {
+        if (stat.district_id) {
+          districtHtml += `<li>${stat.district_id.nom}: ${stat.count} participants</li>`;
+        }
+      });
+    } else {
+      districtHtml += '<li>Aucune donnée</li>';
+    }
     districtHtml += '</ul>';
     document.getElementById('stats_by_district').innerHTML = districtHtml;
 
