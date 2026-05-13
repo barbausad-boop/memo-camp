@@ -1,594 +1,173 @@
-<!DOCTYPE html>
-<html lang="fr">
+<!-- ================================= -->
+<!-- PARCOURS DE FORMATION -->
+<!-- ================================= -->
 
-<head>
+<div class="card">
 
-  <meta charset="UTF-8" />
+  <h2>Parcours de Formation</h2>
 
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0"/>
+  <!-- ======================= -->
+  <!-- CI -->
+  <!-- ======================= -->
 
-  <title>MEMO-CAMP</title>
+  <label>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <input type="checkbox"
+           id="ci_check"
+           onchange="toggleCI()">
 
-  <style>
+    CI - Camp d’Initiation
 
-    body{
-      font-family: Arial, sans-serif;
-      background:#f4f4f4;
-      padding:20px;
-      margin:0;
-    }
+  </label>
 
-    .container{
-      max-width:1100px;
-      margin:auto;
-    }
-
-    .card{
-      background:white;
-      padding:20px;
-      border-radius:12px;
-      margin-bottom:20px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h1,h2{
-      color:#0b5ed7;
-    }
-
-    input,
-    select,
-    button{
-      width:100%;
-      padding:12px;
-      margin-top:10px;
-      border-radius:8px;
-      border:1px solid #ccc;
-      box-sizing:border-box;
-    }
-
-    button{
-      background:#0b5ed7;
-      color:white;
-      font-weight:bold;
-      cursor:pointer;
-    }
-
-    button:hover{
-      background:#084298;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:20px;
-      background:white;
-    }
-
-    th, td{
-      border:1px solid #ddd;
-      padding:10px;
-      text-align:left;
-    }
-
-    th{
-      background:#0b5ed7;
-      color:white;
-    }
-
-    .success{
-      color:green;
-      margin-top:10px;
-      font-weight:bold;
-    }
-
-    .error{
-      color:red;
-      margin-top:10px;
-      font-weight:bold;
-    }
-
-    @media(max-width:768px){
-
-      table{
-        font-size:12px;
-      }
-
-      input,
-      select,
-      button{
-        font-size:14px;
-      }
-    }
-
-  </style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-  <!-- ================================= -->
-  <!-- PARTICIPANTS -->
-  <!-- ================================= -->
-
-  <div class="card">
-
-    <h1>MEMO-CAMP</h1>
-
-    <h2>Ajouter un Participant</h2>
-
-    <input type="text"
-           id="first_name"
-           placeholder="Prénom">
-
-    <input type="text"
-           id="last_name"
-           placeholder="Nom">
-
-    <input type="text"
-           id="groupe_scout"
-           placeholder="Groupe Scout">
-
-    <input type="text"
-           id="district"
-           placeholder="District">
-
-    <input type="text"
-           id="fonction"
-           placeholder="Fonction">
-
-    <input type="date"
-           id="date_naissance">
-
-    <input type="text"
-           id="lieu_naissance"
-           placeholder="Lieu de naissance">
-
-    <input type="text"
-           id="phone"
-           placeholder="Téléphone">
-
-    <input type="email"
-           id="email"
-           placeholder="Email">
-
-    <button onclick="ajouterParticipant()">
-      Enregistrer Participant
-    </button>
-
-    <div id="participantMessage"></div>
-
-  </div>
-
-  <!-- ================================= -->
-  <!-- RECHERCHE -->
-  <!-- ================================= -->
-
-  <div class="card">
-
-    <h2>Recherche Participants</h2>
-
-    <input type="text"
-           id="search"
-           placeholder="Recherche par nom..."
-           onkeyup="chargerParticipants()">
-
-    <table>
-
-      <thead>
-
-        <tr>
-          <th>ID</th>
-          <th>Prénom</th>
-          <th>Nom</th>
-          <th>District</th>
-          <th>Fonction</th>
-        </tr>
-
-      </thead>
-
-      <tbody id="tableBody"></tbody>
-
-    </table>
-
-  </div>
-
-  <!-- ================================= -->
-  <!-- FORMATIONS -->
-  <!-- ================================= -->
-
-  <div class="card">
-
-    <h2>Ajouter des Formations</h2>
+  <div id="ci_block"
+       style="display:none;">
 
     <input type="number"
-           id="participant_id"
-           placeholder="ID Participant">
+           id="ci_annee"
+           placeholder="Année CI">
 
-    <select id="stage"
-            onchange="gererBranche()">
+    <input type="text"
+           id="ci_lieu"
+           placeholder="Lieu CI">
+
+  </div>
+
+  <hr>
+
+  <!-- ======================= -->
+  <!-- CEP -->
+  <!-- ======================= -->
+
+  <label>
+
+    <input type="checkbox"
+           id="cep_check"
+           onchange="toggleCEP()">
+
+    CEP - Camp École Préparatoire
+
+  </label>
+
+  <div id="cep_block"
+       style="display:none;">
+
+    <select id="cep_branche">
 
       <option value="">
-        Choisir un camp
+        Choisir Branche CEP
       </option>
 
-      <option value="CI">
-        CI - Camp d’Initiation
+      <option value="Jaune">
+        Jaune - Louveteaux
       </option>
 
-      <option value="CEP">
-        CEP - Camp École Préparatoire
+      <option value="Verte">
+        Verte - Éclaireurs
       </option>
 
-      <option value="CNB">
-        CNB - Camp National de Branches
-      </option>
-
-      <option value="CBB">
-        CBB - Camp Badge de Bois
+      <option value="Rouge">
+        Rouge - Aînés / Routiers
       </option>
 
     </select>
 
-    <div id="brancheContainer"
-         style="display:none;">
-
-      <select id="branche">
-
-        <option value="">
-          Choisir une branche
-        </option>
-
-        <option value="Jaune">
-          Jaune - Louveteaux
-        </option>
-
-        <option value="Verte">
-          Verte - Éclaireurs
-        </option>
-
-        <option value="Rouge">
-          Rouge - Aînés / Routiers
-        </option>
-
-      </select>
-
-    </div>
-
     <input type="number"
-           id="annee_stage"
-           placeholder="Année de stage">
+           id="cep_annee"
+           placeholder="Année CEP">
 
     <input type="text"
-           id="lieu_stage"
-           placeholder="Lieu de stage">
-
-    <button onclick="ajouterFormation()">
-      Ajouter Formation
-    </button>
-
-    <div id="formationMessage"></div>
+           id="cep_lieu"
+           placeholder="Lieu CEP">
 
   </div>
 
-  <!-- ================================= -->
-  <!-- FILTRES -->
-  <!-- ================================= -->
+  <hr>
 
-  <div class="card">
+  <!-- ======================= -->
+  <!-- CNB -->
+  <!-- ======================= -->
 
-    <h2>Filtrer par année</h2>
+  <label>
+
+    <input type="checkbox"
+           id="cnb_check"
+           onchange="toggleCNB()">
+
+    CNB - Camp National de Branches
+
+  </label>
+
+  <div id="cnb_block"
+       style="display:none;">
+
+    <select id="cnb_branche">
+
+      <option value="">
+        Choisir Branche CNB
+      </option>
+
+      <option value="Jaune">
+        Jaune - Louveteaux
+      </option>
+
+      <option value="Verte">
+        Verte - Éclaireurs
+      </option>
+
+      <option value="Rouge">
+        Rouge - Aînés / Routiers
+      </option>
+
+    </select>
 
     <input type="number"
-           id="filtre_annee"
-           placeholder="Exemple : 2025">
+           id="cnb_annee"
+           placeholder="Année CNB">
 
-    <button onclick="filtrerParAnnee()">
-      Filtrer
-    </button>
-
-    <table>
-
-      <thead>
-
-        <tr>
-          <th>Participant</th>
-          <th>Camp</th>
-          <th>Branche</th>
-          <th>Année</th>
-          <th>Lieu</th>
-        </tr>
-
-      </thead>
-
-      <tbody id="formationTable"></tbody>
-
-    </table>
+    <input type="text"
+           id="cnb_lieu"
+           placeholder="Lieu CNB">
 
   </div>
 
+  <hr>
+
+  <!-- ======================= -->
+  <!-- CBB -->
+  <!-- ======================= -->
+
+  <label>
+
+    <input type="checkbox"
+           id="cbb_check"
+           onchange="toggleCBB()">
+
+    CBB - Camp Badge de Bois
+
+  </label>
+
+  <div id="cbb_block"
+       style="display:none;">
+
+    <input type="number"
+           id="cbb_annee"
+           placeholder="Année CBB">
+
+    <input type="text"
+           id="cbb_lieu"
+           placeholder="Lieu CBB">
+
+  </div>
+
+  <hr>
+
+  <button onclick="enregistrerParcours()">
+
+    Enregistrer Parcours Complet
+
+  </button>
+
+  <div id="formationMessage"></div>
+
 </div>
-
-<script>
-
-  // =====================================
-  // CONFIGURATION SUPABASE
-  // =====================================
-
-  const SUPABASE_URL =
-    "https://gdjenoyyclazwbqvdmcx.supabase.co";
-
-  const SUPABASE_KEY =
-    "sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
-
-  const client =
-    supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
-
-  // =====================================
-  // GERER BRANCHE
-  // =====================================
-
-  function gererBranche(){
-
-    const stage =
-      document.getElementById("stage").value;
-
-    const brancheContainer =
-      document.getElementById("brancheContainer");
-
-    if(stage === "CEP" || stage === "CNB"){
-
-      brancheContainer.style.display = "block";
-
-    } else {
-
-      brancheContainer.style.display = "none";
-    }
-  }
-
-  // =====================================
-  // AJOUT PARTICIPANT
-  // =====================================
-
-  async function ajouterParticipant(){
-
-    const participant = {
-
-      first_name:
-        document.getElementById("first_name").value,
-
-      last_name:
-        document.getElementById("last_name").value,
-
-      groupe_scout:
-        document.getElementById("groupe_scout").value,
-
-      district:
-        document.getElementById("district").value,
-
-      fonction:
-        document.getElementById("fonction").value,
-
-      date_naissance:
-        document.getElementById("date_naissance").value,
-
-      lieu_naissance:
-        document.getElementById("lieu_naissance").value,
-
-      phone:
-        document.getElementById("phone").value,
-
-      email:
-        document.getElementById("email").value
-    };
-
-    const message =
-      document.getElementById("participantMessage");
-
-    const { error } = await client
-      .from("Participants")
-      .insert([participant]);
-
-    if(error){
-
-      message.innerHTML =
-        `<div class="error">${error.message}</div>`;
-
-      return;
-    }
-
-    message.innerHTML =
-      `<div class="success">
-        Participant enregistré
-      </div>`;
-
-    chargerParticipants();
-  }
-
-  // =====================================
-  // CHARGER PARTICIPANTS
-  // =====================================
-
-  async function chargerParticipants(){
-
-    const recherche =
-      document.getElementById("search").value;
-
-    let query = client
-      .from("Participants")
-      .select("*")
-      .order("id", { ascending:true });
-
-    if(recherche){
-
-      query =
-        query.ilike(
-          "last_name",
-          `%${recherche}%`
-        );
-    }
-
-    const { data, error } = await query;
-
-    if(error){
-
-      console.log(error);
-
-      return;
-    }
-
-    const table =
-      document.getElementById("tableBody");
-
-    table.innerHTML = "";
-
-    data.forEach(participant => {
-
-      table.innerHTML += `
-        <tr>
-
-          <td>${participant.id}</td>
-
-          <td>${participant.first_name || ""}</td>
-
-          <td>${participant.last_name || ""}</td>
-
-          <td>${participant.district || ""}</td>
-
-          <td>${participant.fonction || ""}</td>
-
-        </tr>
-      `;
-    });
-  }
-
-  // =====================================
-  // AJOUT FORMATION
-  // =====================================
-
-  async function ajouterFormation(){
-
-    const formation = {
-
-      participant_id:
-        parseInt(
-          document.getElementById("participant_id").value
-        ),
-
-      stage:
-        document.getElementById("stage").value,
-
-      branche:
-        document.getElementById("branche").value,
-
-      annee_de_stage:
-        parseInt(
-          document.getElementById("annee_stage").value
-        ),
-
-      lieu_de_stage:
-        document.getElementById("lieu_stage").value
-    };
-
-    const message =
-      document.getElementById("formationMessage");
-
-    const { error } = await client
-      .from("Formation")
-      .insert([formation]);
-
-    if(error){
-
-      message.innerHTML =
-        `<div class="error">${error.message}</div>`;
-
-      return;
-    }
-
-    message.innerHTML =
-      `<div class="success">
-        Formation ajoutée
-      </div>`;
-  }
-
-  // =====================================
-  // FILTRE PAR ANNEE
-  // =====================================
-
-  async function filtrerParAnnee(){
-
-    const annee =
-      parseInt(
-        document.getElementById("filtre_annee").value
-      );
-
-    const { data, error } = await client
-
-      .from("Formation")
-
-      .select(`
-        stage,
-        branche,
-        annee_de_stage,
-        lieu_de_stage,
-        Participants (
-          first_name,
-          last_name
-        )
-      `)
-
-      .eq("annee_de_stage", annee);
-
-    if(error){
-
-      console.log(error);
-
-      return;
-    }
-
-    const table =
-      document.getElementById("formationTable");
-
-    table.innerHTML = "";
-
-    data.forEach(item => {
-
-      table.innerHTML += `
-
-        <tr>
-
-          <td>
-            ${item.Participants?.first_name || ""}
-            ${item.Participants?.last_name || ""}
-          </td>
-
-          <td>${item.stage || ""}</td>
-
-          <td>${item.branche || ""}</td>
-
-          <td>${item.annee_de_stage || ""}</td>
-
-          <td>${item.lieu_de_stage || ""}</td>
-
-        </tr>
-      `;
-    });
-  }
-
-  // =====================================
-  // INITIALISATION
-  // =====================================
-
-  chargerParticipants();
-
-</script>
-
-</body>
-</html>
