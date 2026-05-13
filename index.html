@@ -1,1 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
 
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>MEMO-CAMP</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+
+    body{
+      font-family: Arial;
+      background:#f4f4f4;
+      padding:20px;
+    }
+
+    .card{
+      background:white;
+      padding:20px;
+      border-radius:10px;
+      max-width:900px;
+      margin:auto;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1,h2{
+      color:#0b5ed7;
+    }
+
+    input,select,button{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border-radius:8px;
+      border:1px solid #ccc;
+      box-sizing:border-box;
+    }
+
+    button{
+      background:#0b5ed7;
+      color:white;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#084298;
+    }
+
+    table{
+      width:100%;
+      margin-top:20px;
+      border-collapse:collapse;
+      background:white;
+    }
+
+    th,td{
+      border:1px solid #ddd;
+      padding:10px;
+      text-align:left;
+    }
+
+    th{
+      background:#0b5ed7;
+      color:white;
+    }
+
+    hr{
+      margin-top:40px;
+      margin-bottom:40px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <h1>MEMO-CAMP</h1>
+
+  <input type="text" id="first_name" placeholder="Prénom">
+
+  <input type="text" id="last_name" placeholder="Nom">
+
+  <input type="text" id="groupe_scout" placeholder="Groupe Scout">
+
+  <input type="text" id="district" placeholder="District">
+
+  <input type="text" id="fonction" placeholder="Fonction">
+
+  <input type="date" id="date_naissance">
+
+  <input type="text" id="lieu_naissance" placeholder="Lieu de naissance">
+
+  <input type="text" id="phone" placeholder="Téléphone">
+
+  <input type="email" id="email" placeholder="Email">
+
+  <button onclick="ajouterParticipant()">
+    Enregistrer Participant
+  </button>
+
+  <input
+    type="text"
+    id="search"
+    placeholder="Recherche par nom..."
+    onkeyup="chargerParticipants()"
+  >
+
+  <table>
+
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Prénom</th>
+        <th>Nom</th>
+        <th>District</th>
+        <th>Fonction</th>
+      </tr>
+    </thead>
+
+    <tbody id="tableBody"></tbody>
+
+  </table>
+
+  <hr>
+
+  <h2>Ajouter des Formations</h2>
+
+  <input
+    type="number"
+    id="participant_id"
+    placeholder="ID Participant"
+  >
+
+  <select id="stage">
+
+    <option value="">
+      Choisir Stage
+    </option>
+
+    <option value="CI">
+      CI - Camp d’Initiation
+    </option>
+
+    <option value="CEP">
+      CEP - Camp École Préparatoire
+    </option>
+
+    <option value="CNB">
+      CNB - Camp National de Branches
+    </option>
+
+    <option value="CBB">
+      CBB - Camp Badge de Bois
+    </option>
+
+  </select>
+
+  <select id="branche">
+
+    <option value="">
+      Choisir Branche
+    </option>
+
+    <option value="Jaune">
+      Jaune - Louveteaux
+    </option>
+
+    <option value="Verte">
+      Verte - Éclaireurs
+    </option>
+
+    <option value="Rouge">
+      Rouge - Aînés/Routiers
+    </option>
+
+  </select>
+
+  <input
+    type="number"
+    id="annee_stage"
+    placeholder="Année du stage"
+  >
+
+  <input
+    type="text"
+    id="lieu_stage"
+    placeholder="Lieu du stage"
+  >
+
+  <button onclick="ajouterFormation()">
+    Ajouter Formation
+  </button>
+
+  <hr>
+
+  <h2>Filtrer par année</h2>
+
+  <input
+    type="number"
+    id="filtre_annee"
+    placeholder="Exemple 2024"
+  >
+
+  <button onclick="filtrerParAnnee()">
+    Filtrer
+  </button>
+
+  <table>
+
+    <thead>
+      <tr>
+        <th>Participant</th>
+        <th>Stage</th>
+        <th>Branche</th
