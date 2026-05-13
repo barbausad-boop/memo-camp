@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memo-Camp Simple - Gestion des Formations</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4"></script>
+    <style>
+        .formation-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .formation-card h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .formation-card label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .formation-card input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .stage-fields {
+            display: none;
+            background: white;
+            border-left: 3px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .stage-fields.active {
+            display: block;
+        }
+
+        .promotion-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .promotion-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .promotion-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .promotion-card li {
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+
+        .btn-small {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-small:hover {
+            background: #764ba2;
+        }
+
+        #promotions_container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stats-box {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stats-box h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .stats-box ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .stats-box li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stats-box li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Memo-Camp - Gestion Simplifiée des Formations</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Participants</h3>
+                <div class="number" id="totalParticipants">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Formations</h3>
+                <div class="number" id="totalFormations">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Branches</h3>
+                <div class="number" id="totalBranches">0</div>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('tab-inscription')">📝 Inscription</button>
+            <button class="tab-btn" onclick="showTab('tab-participants')">👥 Participants</button>
+            <button class="tab-btn" onclick="showTab('tab-promotions')">🎓 Promotions</button>
+            <button class="tab-btn" onclick="showTab('tab-statistiques')">📊 Statistiques</button>
+        </div>
+
+        <div id="tab-inscription" class="tab-content active">
+            <h2>Enregistrer un nouveau participant</h2>
+            <form onsubmit="event.preventDefault(); enregistrerParticipant();">
+
+                <h3>👤 Informations personnelles</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">Prénom *</label>
+                        <input type="text" id="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Nom *</label>
+                        <input type="text" id="last_name" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date_naissance">Date de naissance</label>
+                        <input type="date" id="date_naissance">
+                    </div>
+                    <div class="form-group">
+                        <label for="lieu_naissance">Lieu de naissance</label>
+                        <input type="text" id="lieu_naissance">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Téléphone</label>
+                        <input type="tel" id="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="groupe_base">Groupe de base</label>
+                        <input type="text" id="groupe_base">
+                    </div>
+                    <div class="form-group">
+                        <label for="fonction_actuelle">Fonction actuelle</label>
+                        <input type="text" id="fonction_actuelle">
+                    </div>
+                </div>
+
+                <h3>🎓 Parcours de Formation</h3>
+                
+                <div class="formation-card">
+                    <h4>1️⃣ C.I (Camp Initiation)</h4>
+                    <label>
+                        <input type="checkbox" id="has_ci" onchange="toggleStage('ci')">
+                        J'ai suivi le C.I
+                    </label>
+                    <div id="ci_fields" class="stage-fields">
+                        <input type="number" id="ci_annee" placeholder="Année" min="2000" max="2100">
+                        <input type="text" id="ci_lieu" placeholder="Lieu (ex: CIFOP)">
+                    </div>
+                </div>
+
+                <div class="formation-card">
+                    <h4>2️⃣ C.E.P (Camp École Préparatoire)</h4>
+                    <label>
+                        <input type="checkbox" id="has_cep" onchange="toggleStage('cep')">
+                        J'ai suivi le C.E.P
+                    </label>
+                    <div id="cep_fields" class="stage-fields">
+                        <input type="number" id="cep_annee" placeholder="Année" min="2000" max="2100">
+                        <input type="text" id="cep_lieu" placeholder="Lieu">
+                        <select id="cep_branche">
+                            <option value="">Choisir une branche</option>
+                            <option value="Jaune">Jaune</option>
+                            <option value="Vert">Vert</option>
+                            <option value="Rouge">Rouge</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="formation-card">
+                    <h4>3️⃣ C.N.B (Camp National Branche)</h4>
+                    <label>
+                        <input type="checkbox" id="has_cnb" onchange="toggleStage('cnb')">
+                        J'ai suivi le C.N.B
+                    </label>
+                    <div id="cnb_fields" class="stage-fields">
+                        <input type="number" id="cnb_annee" placeholder="Année" min="2000" max="2100">
+                        <input type="text" id="cnb_lieu" placeholder="Lieu">
+                        <select id="cnb_branche">
+                            <option value="">Choisir une branche</option>
+                            <option value="Jaune">Jaune</option>
+                            <option value="Vert">Vert</option>
+                            <option value="Rouge">Rouge</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="formation-card">
+                    <h4>4️⃣ C.B.B (Camp Badge Bois)</h4>
+                    <label>
+                        <input type="checkbox" id="has_cbb" onchange="toggleStage('cbb')">
+                        J'ai suivi le C.B.B
+                    </label>
+                    <div id="cbb_fields" class="stage-fields">
+                        <input type="number" id="cbb_annee" placeholder="Année" min="2000" max="2100">
+                        <input type="text" id="cbb_lieu" placeholder="Lieu">
+                    </div>
+                </div>
+
+                <button type="submit" style="width: 100%; padding: 15px; margin-top: 20px;">✅ Enregistrer</button>
+            </form>
+        </div>
+
+        <div id="tab-participants" class="tab-content">
+            <h2>Participants</h2>
+            <div class="search-bar">
+                <input type="text" id="search" placeholder="Rechercher...">
+                <button onclick="chargerParticipants()">🔍 Chercher</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prénom</th>
+                        <th>Nom</th>
+                        <th>Stages</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="4" style="text-align: center;">Chargement...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="tab-promotions" class="tab-content">
+            <h2>Promotions par Année et Stage</h2>
+            <div id="promotions_container">
+                <p style="text-align: center;">Chargement...</p>
+            </div>
+        </div>
+
+        <div id="tab-statistiques" class="tab-content">
+            <h2>Statistiques</h2>
+            <div class="stats-grid">
+                <div class="stats-box">
+                    <h3>Par Stage</h3>
+                    <div id="stats_by_stage"><p>Chargement...</p></div>
+                </div>
+                <div class="stats-box">
+                    <h3>Par Branche</h3>
+                    <div id="stats_by_branch"><p>Chargement...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script_simple.js"></script>
+</body>
+</html>
