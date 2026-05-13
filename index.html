@@ -1,5 +1,4 @@
 <script>
-
 const SUPABASE_URL =
 "https://gdjenoyyclazwbqvdmcx.supabase.co";
 
@@ -177,7 +176,7 @@ async function chargerParticipants(){
 
     query = query.ilike(
       "last_name",
-      `%${recherche}%`
+      %${recherche}%
     );
   }
 
