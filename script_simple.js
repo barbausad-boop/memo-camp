@@ -1,0 +1,455 @@
+const SUPABASE_URL = "https://gdjenoyyclazwbqvdmcx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================
+// INITIALISATION
+// ============================================
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log("Application SIMPLE chargée");
+  await mettreAJourStatistiques();
+  await chargerParticipants();
+});
+
+// ============================================
+// GESTION DES ONGLETS
+// ============================================
+function showTab(tabId) {
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => tab.classList.remove('active'));
+
+  const buttons = document.querySelectorAll('.tab-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  document.getElementById(tabId).classList.add('active');
+  event.target.classList.add('active');
+
+  if (tabId === 'tab-participants') {
+    chargerParticipants();
+  } else if (tabId === 'tab-promotions') {
+    chargerPromotions();
+  } else if (tabId === 'tab-statistiques') {
+    chargerStatistiques();
+  }
+}
+
+// ============================================
+// TOGGLE STAGE
+// ============================================
+function toggleStage(stage) {
+  const checkbox = document.getElementById(`has_${stage}`);
+  const fields = document.getElementById(`${stage}_fields`);
+  
+  if (checkbox.checked) {
+    fields.style.display = 'block';
+  } else {
+    fields.style.display = 'none';
+    clearStageFields(stage);
+  }
+}
+
+function clearStageFields(stage) {
+  const fields = document.querySelectorAll(`#${stage}_fields input, #${stage}_fields select`);
+  fields.forEach(field => field.value = '');
+}
+
+// ============================================
+// VALIDATION HIÉRARCHIQUE
+// ============================================
+function validerHierarchieStages() {
+  const stages = ['ci', 'cep', 'cnb', 'cbb'];
+  const checks = stages.map(s => document.getElementById(`has_${s}`).checked);
+  
+  // Vérifier que ce n'est pas un trou
+  for (let i = 0; i < checks.length - 1; i++) {
+    if (!checks[i] && checks[i + 1]) {
+      alert(`❌ Erreur : Vous devez compléter les stages en ordre`);
+      return false;
+    }
+  }
+
+  // Vérifier que C.E.P et C.N.B ont une branche
+  if (document.getElementById('has_cep').checked && !document.getElementById('cep_branche').value) {
+    alert("❌ La branche est obligatoire pour le C.E.P");
+    return false;
+  }
+
+  if (document.getElementById('has_cnb').checked && !document.getElementById('cnb_branche').value) {
+    alert("❌ La branche est obligatoire pour le C.N.B");
+    return false;
+  }
+
+  return true;
+}
+
+// ============================================
+// ENREGISTRER PARTICIPANT
+// ============================================
+async function enregistrerParticipant() {
+  try {
+    if (!validerHierarchieStages()) return;
+
+    const firstName = document.getElementById('first_name').value.trim();
+    const lastName = document.getElementById('last_name').value.trim();
+
+    if (!firstName || !lastName) {
+      alert("❌ Prénom et Nom sont obligatoires");
+      return;
+    }
+
+    // Créer le participant
+    const participant = {
+      first_name: firstName,
+      last_name: lastName,
+      date_naissance: document.getElementById('date_naissance').value || null,
+      lieu_naissance: document.getElementById('lieu_naissance').value || null,
+      phone: document.getElementById('phone').value || null,
+      email: document.getElementById('email').value || null,
+      fonction_actuelle: document.getElementById('fonction_actuelle').value || null,
+      groupe_base: document.getElementById('groupe_base').value || null,
+      region_id: null,
+      district_id: null
+    };
+
+    const { data: participantData, error: participantError } = await client
+      .from('Participants')
+      .insert([participant])
+      .select();
+
+    if (participantError) throw participantError;
+
+    const participantId = participantData[0].id;
+    console.log("Participant créé:", participantId);
+
+    // Créer les formations
+    const formations = [];
+    const stagesMap = {
+      'ci': { code: 'C.I', ordre: 1, needBranch: false },
+      'cep': { code: 'C.E.P', ordre: 2, needBranch: true },
+      'cnb': { code: 'C.N.B', ordre: 3, needBranch: true },
+      'cbb': { code: 'C.B.B', ordre: 4, needBranch: false }
+    };
+
+    for (const [stageKey, stageInfo] of Object.entries(stagesMap)) {
+      const hasStage = document.getElementById(`has_${stageKey}`).checked;
+      
+      if (hasStage) {
+        const annee = document.getElementById(`${stageKey}_annee`).value;
+        const lieu = document.getElementById(`${stageKey}_lieu`).value || null;
+        let brancheId = null;
+
+        if (stageInfo.needBranch) {
+          const branchNom = document.getElementById(`${stageKey}_branche`).value;
+          const { data: branchData } = await client
+            .from('branches')
+            .select('id')
+            .eq('nom', branchNom)
+            .single();
+          
+          if (branchData) brancheId = branchData.id;
+        }
+
+        // Récupérer l'ID du stage
+        const { data: stageData } = await client
+          .from('stages')
+          .select('id')
+          .eq('code', stageInfo.code)
+          .single();
+
+        formations.push({
+          participant_id: participantId,
+          stage_id: stageData.id,
+          branche_id: brancheId,
+          annee_stage: parseInt(annee),
+          lieu_stage: lieu
+        });
+      }
+    }
+
+    if (formations.length > 0) {
+      const { error: formationError } = await client
+        .from('Formation')
+        .insert(formations);
+
+      if (formationError) throw formationError;
+    }
+
+    alert("✅ Participant et formations enregistrés avec succès!");
+
+    // Réinitialiser le formulaire
+    document.querySelector('form').reset();
+    ['ci', 'cep', 'cnb', 'cbb'].forEach(stage => {
+      document.getElementById(`${stage}_fields`).style.display = 'none';
+    });
+
+    // Recharger les données
+    await mettreAJourStatistiques();
+    await chargerParticipants();
+
+  } catch (error) {
+    console.error("Erreur:", error);
+    alert("❌ Erreur: " + error.message);
+  }
+}
+
+// ============================================
+// CHARGER LES PARTICIPANTS
+// ============================================
+async function chargerParticipants() {
+  try {
+    const recherche = document.getElementById('search') ? document.getElementById('search').value.trim() : '';
+
+    let query = client
+      .from('parcours_participant')
+      .select('*');
+
+    if (recherche) {
+      query = query.or(
+        `first_name.ilike.%${recherche}%,last_name.ilike.%${recherche}%`
+      );
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Grouper par participant
+    const participants = {};
+    data.forEach(row => {
+      const key = `${row.id}_${row.first_name}_${row.last_name}`;
+      if (!participants[key]) {
+        participants[key] = {
+          id: row.id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          fonction_actuelle: row.fonction_actuelle,
+          groupe_base: row.groupe_base,
+          formations: []
+        };
+      }
+      if (row.formation_id) {
+        participants[key].formations.push({
+          stage_code: row.stage_code,
+          branche: row.branche_nom,
+          annee: row.annee_stage,
+          lieu: row.lieu_stage
+        });
+      }
+    });
+
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+
+    if (Object.keys(participants).length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">Aucun participant</td></tr>';
+      return;
+    }
+
+    Object.values(participants).forEach(p => {
+      const stages = p.formations.map(f => f.stage_code).join(', ');
+      tableBody.innerHTML += `
+        <tr>
+          <td>${p.first_name || '-'}</td>
+          <td>${p.last_name || '-'}</td>
+          <td>${stages || 'Aucun'}</td>
+          <td>
+            <button onclick="afficherProfil(${p.id})" class="btn-small">👁️ Voir</button>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (error) {
+    console.error("Erreur:", error);
+    document.getElementById('tableBody').innerHTML = 
+      `<tr><td colspan="4" style="text-align: center; color: red;">Erreur: ${error.message}</td></tr>`;
+  }
+}
+
+// ============================================
+// AFFICHER LE PROFIL COMPLET
+// ============================================
+async function afficherProfil(participantId) {
+  try {
+    const { data, error } = await client
+      .from('parcours_participant')
+      .select('*')
+      .eq('id', participantId);
+
+    if (error) throw error;
+
+    if (data.length === 0) {
+      alert("Profil non trouvé");
+      return;
+    }
+
+    const p = data[0];
+    let profil = `${p.first_name} ${p.last_name}\n`;
+    profil += `Fonction: ${p.fonction_actuelle || '-'}\n`;
+    profil += `Groupe: ${p.groupe_base || '-'}\n\n`;
+    profil += `Parcours:\n`;
+
+    data.forEach(row => {
+      if (row.stage_code) {
+        profil += `- ${row.stage_code} (${row.annee_stage})`;
+        if (row.branche_nom) profil += ` - Branche: ${row.branche_nom}`;
+        if (row.lieu_stage) profil += ` - Lieu: ${row.lieu_stage}`;
+        profil += `\n`;
+      }
+    });
+
+    alert(profil);
+
+  } catch (error) {
+    console.error("Erreur:", error);
+    alert("❌ Erreur: " + error.message);
+  }
+}
+
+// ============================================
+// CHARGER PROMOTIONS
+// ============================================
+async function chargerPromotions() {
+  try {
+    const { data, error } = await client
+      .from('parcours_participant')
+      .select('*')
+      .not('stage_code', 'is', null)
+      .order('annee_stage', { ascending: false })
+      .order('stage_ordre', { ascending: true });
+
+    if (error) throw error;
+
+    // Grouper par année et stage
+    const promotions = {};
+    data.forEach(row => {
+      const key = `${row.stage_code}_${row.annee_stage}`;
+      if (!promotions[key]) {
+        promotions[key] = {
+          stage: row.stage_code,
+          annee: row.annee_stage,
+          participants: []
+        };
+      }
+      if (!promotions[key].participants.find(p => p.id === row.id)) {
+        promotions[key].participants.push({
+          id: row.id,
+          name: `${row.first_name} ${row.last_name}`,
+          branche: row.branche_nom,
+          lieu: row.lieu_stage
+        });
+      }
+    });
+
+    const container = document.getElementById('promotions_container');
+    container.innerHTML = '';
+
+    Object.values(promotions)
+      .sort((a, b) => b.annee - a.annee)
+      .forEach(promo => {
+        const html = `
+          <div class="promotion-card">
+            <h3>${promo.stage} - ${promo.annee} (${promo.participants.length} participants)</h3>
+            <ul>
+              ${promo.participants.map(p => `
+                <li>
+                  ${p.name}
+                  ${p.branche ? ` - ${p.branche}` : ''}
+                  ${p.lieu ? ` - ${p.lieu}` : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+        container.innerHTML += html;
+      });
+
+    if (Object.keys(promotions).length === 0) {
+      container.innerHTML = '<p style="text-align: center; color: #999;">Aucune promotion trouvée</p>';
+    }
+
+  } catch (error) {
+    console.error("Erreur:", error);
+    document.getElementById('promotions_container').innerHTML = 
+      `<p style="color: red;">Erreur: ${error.message}</p>`;
+  }
+}
+
+// ============================================
+// CHARGER STATISTIQUES
+// ============================================
+async function chargerStatistiques() {
+  try {
+    // Par stage
+    const { data: stageStats } = await client
+      .from('Formation')
+      .select('stage_id(code), COUNT(*)', { count: 'exact' })
+      .group_by('stage_id');
+
+    let stageHtml = '<ul>';
+    if (stageStats && stageStats.length > 0) {
+      stageStats.forEach(stat => {
+        if (stat.stage_id) {
+          stageHtml += `<li>${stat.stage_id.code}: ${stat.count} participants</li>`;
+        }
+      });
+    } else {
+      stageHtml += '<li>Aucune donnée</li>';
+    }
+    stageHtml += '</ul>';
+    document.getElementById('stats_by_stage').innerHTML = stageHtml;
+
+    // Par branche
+    const { data: branchStats } = await client
+      .from('Formation')
+      .select('branche_id(nom), COUNT(*)', { count: 'exact' })
+      .not('branche_id', 'is', null)
+      .group_by('branche_id');
+
+    let branchHtml = '<ul>';
+    if (branchStats && branchStats.length > 0) {
+      branchStats.forEach(stat => {
+        if (stat.branche_id) {
+          branchHtml += `<li>${stat.branche_id.nom}: ${stat.count} participants</li>`;
+        }
+      });
+    } else {
+      branchHtml += '<li>Aucune donnée</li>';
+    }
+    branchHtml += '</ul>';
+    document.getElementById('stats_by_branch').innerHTML = branchHtml;
+
+  } catch (error) {
+    console.error("Erreur statistiques:", error);
+  }
+}
+
+// ============================================
+// METTRE À JOUR STATISTIQUES
+// ============================================
+async function mettreAJourStatistiques() {
+  try {
+    const { count: countParticipants } = await client
+      .from('Participants')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: countFormations } = await client
+      .from('Formation')
+      .select('*', { count: 'exact', head: true });
+
+    const { data: branches } = await client
+      .from('Formation')
+      .select('branche_id')
+      .not('branche_id', 'is', null);
+
+    const uniqueBranches = new Set(branches.map(f => f.branche_id)).size;
+
+    document.getElementById('totalParticipants').textContent = countParticipants || 0;
+    document.getElementById('totalFormations').textContent = countFormations || 0;
+    document.getElementById('totalBranches').textContent = uniqueBranches || 0;
+
+  } catch (error) {
+    console.error("Erreur statistiques:", error);
+  }
+}
