@@ -1,211 +1,196 @@
-<script>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memo-Camp - Gestion des Formations Scoutes</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Memo-Camp - Gestion des Formations Scoutes</h1>
+        
+        <!-- Statistiques -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Participants</h3>
+                <div class="number" id="totalParticipants">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Formations</h3>
+                <div class="number" id="totalFormations">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Branches</h3>
+                <div class="number" id="totalBranches">0</div>
+            </div>
+        </div>
 
-const SUPABASE_URL =
-"https://gdjenoyyclazwbqvdmcx.supabase.co";
+        <!-- Navigation Onglets -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('tab-inscription')">📝 Inscription</button>
+            <button class="tab-btn" onclick="showTab('tab-participants')">👥 Participants</button>
+            <button class="tab-btn" onclick="showTab('tab-formations')">🎓 Formations</button>
+        </div>
 
-const SUPABASE_KEY =
-"sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
+        <!-- Onglet 1: Inscription -->
+        <div id="tab-inscription" class="tab-content active">
+            <h2>Enregistrer un nouveau participant</h2>
+            <form onsubmit="event.preventDefault(); enregistrerDossier();">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">Prénom *</label>
+                        <input type="text" id="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Nom *</label>
+                        <input type="text" id="last_name" required>
+                    </div>
+                </div>
 
-const client = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date_naissance">Date de naissance</label>
+                        <input type="date" id="date_naissance">
+                    </div>
+                    <div class="form-group">
+                        <label for="lieu_naissance">Lieu de naissance</label>
+                        <input type="text" id="lieu_naissance">
+                    </div>
+                </div>
 
-async function enregistrerDossier(){
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Téléphone</label>
+                        <input type="tel" id="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email">
+                    </div>
+                </div>
 
-  const participant = {
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="groupe_scout">Groupe Scout</label>
+                        <input type="text" id="groupe_scout">
+                    </div>
+                    <div class="form-group">
+                        <label for="district">District</label>
+                        <input type="text" id="district">
+                    </div>
+                </div>
 
-    first_name:
-      document.getElementById("first_name").value,
+                <div class="form-group">
+                    <label for="fonction">Fonction</label>
+                    <select id="fonction">
+                        <option value="">-- Sélectionner une fonction --</option>
+                        <option value="Chef">Chef</option>
+                        <option value="Animateur">Animateur</option>
+                        <option value="Instructeur">Instructeur</option>
+                        <option value="Participant">Participant</option>
+                        <option value="Formateur">Formateur</option>
+                    </select>
+                </div>
 
-    last_name:
-      document.getElementById("last_name").value,
+                <h3 style="margin-top: 20px;">Informations de Formation</h3>
 
-    groupe_scout:
-      document.getElementById("groupe_scout").value,
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="stage">Stage *</label>
+                        <input type="text" id="stage" placeholder="Ex: Stage de Base" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="branche">Branche *</label>
+                        <select id="branche" required>
+                            <option value="">-- Sélectionner une branche --</option>
+                            <option value="Castors">Castors</option>
+                            <option value="Louveteaux">Louveteaux</option>
+                            <option value="Scouts">Scouts</option>
+                            <option value="Pionniers">Pionniers</option>
+                            <option value="Routiers">Routiers</option>
+                        </select>
+                    </div>
+                </div>
 
-    district:
-      document.getElementById("district").value,
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="annee_stage">Année de formation *</label>
+                        <input type="number" id="annee_stage" min="2000" max="2100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lieu_stage">Lieu de formation</label>
+                        <input type="text" id="lieu_stage" placeholder="Ex: Camp de Ste-Croix">
+                    </div>
+                </div>
 
-    fonction:
-      document.getElementById("fonction").value,
+                <button type="submit" style="width: 100%; padding: 15px; font-size: 16px; margin-top: 20px;">
+                    ✅ Enregistrer le dossier
+                </button>
+            </form>
+        </div>
 
-    date_naissance:
-      document.getElementById("date_naissance").value,
+        <!-- Onglet 2: Participants -->
+        <div id="tab-participants" class="tab-content">
+            <h2>Liste des Participants</h2>
+            <div class="search-bar">
+                <input type="text" id="search" placeholder="Rechercher par nom, prénom ou email...">
+                <button onclick="chargerParticipants()">🔍 Chercher</button>
+                <button class="export-btn" onclick="exporterCSV('participants')">⬇️ Export CSV</button>
+            </div>
 
-    lieu_naissance:
-      document.getElementById("lieu_naissance").value,
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Prénom</th>
+                        <th>Nom</th>
+                        <th>District</th>
+                        <th>Fonction</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #999;">Chargement...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    phone:
-      document.getElementById("phone").value,
+        <!-- Onglet 3: Formations -->
+        <div id="tab-formations" class="tab-content">
+            <h2>Liste des Formations</h2>
+            <div class="filters">
+                <label for="filtre_annee">Filtrer par année :</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="number" id="filtre_annee" min="2000" max="2100" placeholder="Ex: 2024">
+                    <button onclick="filtrerParAnnee()">🔍 Filtrer</button>
+                    <button class="export-btn" onclick="exporterCSV('formations')">⬇️ Export CSV</button>
+                </div>
+            </div>
 
-    email:
-      document.getElementById("email").value
-  };
+            <table>
+                <thead>
+                    <tr>
+                        <th>Participant</th>
+                        <th>Stage</th>
+                        <th>Branche</th>
+                        <th>Année</th>
+                        <th>Lieu</th>
+                    </tr>
+                </thead>
+                <tbody id="formationTable">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #999;">Chargement...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-  const { data, error } = await client
-    .from("Participants")
-    .insert([participant])
-    .select();
-
-  if(error){
-    alert(error.message);
-    return;
-  }
-
-  const participantId = data[0].id;
-
-  const formation = {
-
-    participant_id: participantId,
-
-    stage:
-      document.getElementById("stage").value,
-
-    branche:
-      document.getElementById("branche").value,
-
-    annee_stage:
-      document.getElementById("annee_stage").value,
-
-    lieu_stage:
-      document.getElementById("lieu_stage").value
-  };
-
-  const { error: formationError } = await client
-    .from("Formation")
-    .insert([formation]);
-
-  if(formationError){
-    alert(formationError.message);
-    return;
-  }
-
-  alert("Dossier enregistré");
-
-  // vider formulaire
-  document.getElementById("first_name").value = "";
-  document.getElementById("last_name").value = "";
-  document.getElementById("date_naissance").value = "";
-  document.getElementById("lieu_naissance").value = "";
-  document.getElementById("phone").value = "";
-  document.getElementById("email").value = "";
-  document.getElementById("groupe_scout").value = "";
-  document.getElementById("district").value = "";
-  document.getElementById("fonction").value = "";
-  document.getElementById("stage").value = "";
-  document.getElementById("branche").value = "";
-  document.getElementById("annee_stage").value = "";
-  document.getElementById("lieu_stage").value = "";
-
-  chargerParticipants();
-
-  filtrerParAnnee();
-}
-
-async function chargerParticipants(){
-
-  const recherche =
-    document.getElementById("search").value;
-
-  let query = client
-    .from("Participants")
-    .select("*");
-
-  if(recherche){
-
-    query = query.ilike(
-      "last_name",
-      `%${recherche}%`
-    );
-  }
-
-  const { data, error } = await query;
-
-  if(error){
-    console.log(error);
-    return;
-  }
-
-  const table =
-    document.getElementById("tableBody");
-
-  table.innerHTML = "";
-
-  data.forEach(participant => {
-
-    table.innerHTML += `
-      <tr>
-        <td>${participant.id}</td>
-        <td>${participant.first_name || ""}</td>
-        <td>${participant.last_name || ""}</td>
-        <td>${participant.district || ""}</td>
-        <td>${participant.fonction || ""}</td>
-      </tr>
-    `;
-  });
-}
-
-async function filtrerParAnnee(){
-
-  const annee =
-    document.getElementById("filtre_annee").value;
-
-  let query = client
-    .from("Formation")
-    .select(`
-      *,
-      Participants(
-        first_name,
-        last_name
-      )
-    `);
-
-  if(annee){
-
-    query = query.eq(
-      "annee_stage",
-      annee
-    );
-  }
-
-  const { data, error } = await query;
-
-  if(error){
-    console.log(error);
-    return;
-  }
-
-  const table =
-    document.getElementById("formationTable");
-
-  table.innerHTML = "";
-
-  data.forEach(formation => {
-
-    table.innerHTML += `
-      <tr>
-
-        <td>
-          ${formation.Participants?.first_name || ""}
-          ${formation.Participants?.last_name || ""}
-        </td>
-
-        <td>${formation.stage || ""}</td>
-
-        <td>${formation.branche || ""}</td>
-
-        <td>${formation.annee_stage || ""}</td>
-
-        <td>${formation.lieu_stage || ""}</td>
-
-      </tr>
-    `;
-  });
-}
-
-chargerParticipants();
-
-filtrerParAnnee();
-
-</script>
+    <script src="script.js"></script>
+</body>
+</html>
