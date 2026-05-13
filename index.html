@@ -227,7 +227,46 @@ const client = supabase.createClient(
 );
 
 async function enregistrerDossier(){
+const first_name = document.getElementById("first_name").value;
+const last_name = document.getElementById("last_name").value;
+const groupe_scout = document.getElementById("groupe_scout").value;
+const district = document.getElementById("district").value;
+const telephone = document.getElementById("telephone").value;
+const email = document.getElementById("email").value;
+const fonction = document.getElementById("fonction").value;
+const stage = document.getElementById("stage").value;
+const branche = document.getElementById("branche").value;
+const annee_stage = document.getElementById("annee_stage").value;
+const lieu_stage = document.getElementById("lieu_stage").value;
 
+if (
+  !first_name ||
+  !last_name ||
+  !groupe_scout ||
+  !district ||
+  !telephone ||
+  !email ||
+  !fonction ||
+  !stage ||
+  !branche ||
+  !annee_stage ||
+  !lieu_stage
+) {
+  alert("Tous les champs sont obligatoires");
+  return;
+}
+
+const { data: existingParticipant } = await client
+  .from("Participants")
+  .select("*")
+  .eq("first_name", first_name)
+  .eq("last_name", last_name)
+  .eq("telephone", telephone);
+
+if (existingParticipant && existingParticipant.length > 0) {
+  alert("Participant déjà enregistré");
+  return;
+}
   const participant = {
 
     first_name:
