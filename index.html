@@ -1,3 +1,16 @@
+<script>
+
+const SUPABASE_URL =
+"https://gdjenoyyclazwbqvdmcx.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
+
+const client = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
 async function enregistrerDossier(){
 
   const first_name =
@@ -131,7 +144,7 @@ async function enregistrerDossier(){
 
   alert("Dossier enregistré");
 
-  // Vider le formulaire
+  // Vider formulaire
   document.getElementById("first_name").value = "";
   document.getElementById("last_name").value = "";
   document.getElementById("date_naissance").value = "";
@@ -150,3 +163,110 @@ async function enregistrerDossier(){
 
   filtrerParAnnee();
 }
+
+async function chargerParticipants(){
+
+  const recherche =
+    document.getElementById("search").value;
+
+  let query = client
+    .from("Participants")
+    .select("*");
+
+  if(recherche){
+
+    query = query.ilike(
+      "last_name",
+      `%${recherche}%`
+    );
+  }
+
+  const { data, error } = await query;
+
+  if(error){
+    console.log(error);
+    return;
+  }
+
+  const table =
+    document.getElementById("tableBody");
+
+  table.innerHTML = "";
+
+  data.forEach(participant => {
+
+    table.innerHTML += `
+      <tr>
+        <td>${participant.id}</td>
+        <td>${participant.first_name || ""}</td>
+        <td>${participant.last_name || ""}</td>
+        <td>${participant.district || ""}</td>
+        <td>${participant.fonction || ""}</td>
+      </tr>
+    `;
+  });
+}
+
+async function filtrerParAnnee(){
+
+  const annee =
+    document.getElementById("filtre_annee").value;
+
+  let query = client
+    .from("Formation")
+    .select(`
+      *,
+      Participants(
+        first_name,
+        last_name
+      )
+    `);
+
+  if(annee){
+
+    query = query.eq(
+      "annee_stage",
+      annee
+    );
+  }
+
+  const { data, error } = await query;
+
+  if(error){
+    console.log(error);
+    return;
+  }
+
+  const table =
+    document.getElementById("formationTable");
+
+  table.innerHTML = "";
+
+  data.forEach(formation => {
+
+    table.innerHTML += `
+      <tr>
+
+        <td>
+          ${formation.Participants?.first_name || ""}
+          ${formation.Participants?.last_name || ""}
+        </td>
+
+        <td>${formation.stage || ""}</td>
+
+        <td>${formation.branche || ""}</td>
+
+        <td>${formation.annee_stage || ""}</td>
+
+        <td>${formation.lieu_stage || ""}</td>
+
+      </tr>
+    `;
+  });
+}
+
+chargerParticipants();
+
+filtrerParAnnee();
+
+</script>
