@@ -2,8 +2,8 @@
 <html lang="fr">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>MEMO-CAMP</title>
 
@@ -19,10 +19,10 @@
 
     .card{
       background:white;
-      padding:20px;
-      border-radius:10px;
-      max-width:900px;
+      max-width:700px;
       margin:auto;
+      padding:20px;
+      border-radius:12px;
       box-shadow:0 0 10px rgba(0,0,0,0.1);
     }
 
@@ -42,12 +42,8 @@
     button{
       background:#0b5ed7;
       color:white;
+      border:none;
       font-weight:bold;
-      cursor:pointer;
-    }
-
-    button:hover{
-      background:#084298;
     }
 
     table{
@@ -68,12 +64,8 @@
       color:white;
     }
 
-    hr{
-      margin-top:40px;
-      margin-bottom:40px;
-    }
-
   </style>
+
 </head>
 
 <body>
@@ -81,16 +73,12 @@
 <div class="card">
 
   <h1>MEMO-CAMP</h1>
-<h2>Informations Personnelles</h2>
+
+  <h2>Informations Personnelles</h2>
+
   <input type="text" id="first_name" placeholder="Prénom">
 
   <input type="text" id="last_name" placeholder="Nom">
-<h2>Informations Scoutes</h2>
-  <input type="text" id="groupe_scout" placeholder="Groupe Scout">
-
-  <input type="text" id="district" placeholder="District">
-
-  <input type="text" id="fonction" placeholder="Fonction">
 
   <input type="date" id="date_naissance">
 
@@ -100,43 +88,19 @@
 
   <input type="email" id="email" placeholder="Email">
 
-  <button onclick="ajouterParticipant()">
-    Enregistrer Participant
-  </button>
+  <h2>Informations Scoutes</h2>
 
-  <input
-    type="text"
-    id="search"
-    placeholder="Recherche par nom..."
-    onkeyup="chargerParticipants()"
-  >
+  <input type="text" id="groupe_scout" placeholder="Groupe Scout">
 
-  <table>
+  <input type="text" id="district" placeholder="District">
 
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Prénom</th>
-        <th>Nom</th>
-        <th>District</th>
-        <th>Fonction</th>
-      </tr>
-    </thead>
-
-    <tbody id="tableBody"></tbody>
-
-  </table>
-
-  <hr>
+  <input type="text" id="fonction" placeholder="Fonction">
 
   <h2>Parcours de Formation</h2>
 
-
   <select id="stage">
 
-    <option value="">
-      Choisir Stage
-    </option>
+    <option value="">Choisir Stage</option>
 
     <option value="CI">
       CI - Camp d’Initiation
@@ -158,9 +122,7 @@
 
   <select id="branche">
 
-    <option value="">
-      Choisir Branche
-    </option>
+    <option value="">Choisir Branche</option>
 
     <option value="Jaune">
       Jaune - Louveteaux
@@ -188,9 +150,34 @@
     placeholder="Lieu du stage"
   >
 
-  <button onclick="ajouterFormation()">
-    Ajouter Formation
+  <button onclick="enregistrerDossier()">
+    Enregistrer Dossier
   </button>
+
+  <hr>
+
+  <input
+    type="text"
+    id="search"
+    placeholder="Recherche par nom..."
+    onkeyup="chargerParticipants()"
+  >
+
+  <table>
+
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Prénom</th>
+        <th>Nom</th>
+        <th>District</th>
+        <th>Fonction</th>
+      </tr>
+    </thead>
+
+    <tbody id="tableBody"></tbody>
+
+  </table>
 
   <hr>
 
@@ -209,7 +196,219 @@
   <table>
 
     <thead>
+
       <tr>
         <th>Participant</th>
         <th>Stage</th>
-        <th>Branche</th
+        <th>Branche</th>
+        <th>Année</th>
+        <th>Lieu</th>
+      </tr>
+
+    </thead>
+
+    <tbody id="formationTable"></tbody>
+
+  </table>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+"https://gdjenoyyclazwbqvdmcx.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
+
+const client = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+async function enregistrerDossier(){
+
+  const participant = {
+
+    first_name:
+      document.getElementById("first_name").value,
+
+    last_name:
+      document.getElementById("last_name").value,
+
+    groupe_scout:
+      document.getElementById("groupe_scout").value,
+
+    district:
+      document.getElementById("district").value,
+
+    fonction:
+      document.getElementById("fonction").value,
+
+    date_naissance:
+      document.getElementById("date_naissance").value,
+
+    lieu_naissance:
+      document.getElementById("lieu_naissance").value,
+
+    phone:
+      document.getElementById("phone").value,
+
+    email:
+      document.getElementById("email").value
+  };
+
+  const { data, error } = await client
+    .from("Participants")
+    .insert([participant])
+    .select();
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  const participantId = data[0].id;
+
+  const formation = {
+
+    participant_id: participantId,
+
+    stage:
+      document.getElementById("stage").value,
+
+    branche:
+      document.getElementById("branche").value,
+
+    annee_stage:
+      document.getElementById("annee_stage").value,
+
+    lieu_stage:
+      document.getElementById("lieu_stage").value
+  };
+
+  const { error: formationError } = await client
+    .from("Formation")
+    .insert([formation]);
+
+  if(formationError){
+    alert(formationError.message);
+    return;
+  }
+
+  alert("Dossier enregistré");
+
+  chargerParticipants();
+
+  filtrerParAnnee();
+}
+
+async function chargerParticipants(){
+
+  const recherche =
+    document.getElementById("search").value;
+
+  let query = client
+    .from("Participants")
+    .select("*");
+
+  if(recherche){
+
+    query = query.ilike(
+      "last_name",
+      `%${recherche}%`
+    );
+  }
+
+  const { data, error } = await query;
+
+  if(error){
+    console.log(error);
+    return;
+  }
+
+  const table =
+    document.getElementById("tableBody");
+
+  table.innerHTML = "";
+
+  data.forEach(participant => {
+
+    table.innerHTML += `
+      <tr>
+        <td>${participant.id}</td>
+        <td>${participant.first_name || ""}</td>
+        <td>${participant.last_name || ""}</td>
+        <td>${participant.district || ""}</td>
+        <td>${participant.fonction || ""}</td>
+      </tr>
+    `;
+  });
+}
+
+async function filtrerParAnnee(){
+
+  const annee =
+    document.getElementById("filtre_annee").value;
+
+  let query = client
+    .from("Formation")
+    .select(`
+      *,
+      Participants(
+        first_name,
+        last_name
+      )
+    `);
+
+  if(annee){
+
+    query = query.eq(
+      "annee_stage",
+      annee
+    );
+  }
+
+  const { data, error } = await query;
+
+  if(error){
+    console.log(error);
+    return;
+  }
+
+  const table =
+    document.getElementById("formationTable");
+
+  table.innerHTML = "";
+
+  data.forEach(formation => {
+
+    table.innerHTML += `
+      <tr>
+
+        <td>
+          ${formation.Participants?.first_name || ""}
+          ${formation.Participants?.last_name || ""}
+        </td>
+
+        <td>${formation.stage || ""}</td>
+
+        <td>${formation.branche || ""}</td>
+
+        <td>${formation.annee_stage || ""}</td>
+
+        <td>${formation.lieu_stage || ""}</td>
+
+      </tr>
+    `;
+  });
+}
+
+chargerParticipants();
+
+filtrerParAnnee();
+
+</script>
+
+</body>
+  </html>
