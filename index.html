@@ -1,300 +1,97 @@
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>MEMO-CAMP</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-  <style>
-
-    body{
-      font-family: Arial;
-      background:#f4f4f4;
-      padding:20px;
-    }
-
-    .card{
-      background:white;
-      max-width:700px;
-      margin:auto;
-      padding:20px;
-      border-radius:12px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h1,h2{
-      color:#0b5ed7;
-    }
-
-    input,select,button{
-      width:100%;
-      padding:12px;
-      margin-top:10px;
-      border-radius:8px;
-      border:1px solid #ccc;
-      box-sizing:border-box;
-    }
-
-    button{
-      background:#0b5ed7;
-      color:white;
-      border:none;
-      font-weight:bold;
-    }
-
-    table{
-      width:100%;
-      margin-top:20px;
-      border-collapse:collapse;
-      background:white;
-    }
-
-    th,td{
-      border:1px solid #ddd;
-      padding:10px;
-      text-align:left;
-    }
-
-    th{
-      background:#0b5ed7;
-      color:white;
-    }
-
-  </style>
-
-</head>
-
-<body>
-
-<div class="card">
-
-  <h1>MEMO-CAMP</h1>
-
-  <h2>Informations Personnelles</h2>
-
-  <input type="text" id="first_name" placeholder="Prénom">
-
-  <input type="text" id="last_name" placeholder="Nom">
-
-  <input type="date" id="date_naissance">
-
-  <input type="text" id="lieu_naissance" placeholder="Lieu de naissance">
-
-  <input type="text" id="phone" placeholder="Téléphone">
-
-  <input type="email" id="email" placeholder="Email">
-
-  <h2>Informations Scoutes</h2>
-
-  <input type="text" id="groupe_scout" placeholder="Groupe Scout">
-
-  <input type="text" id="district" placeholder="District">
-
-  <input type="text" id="fonction" placeholder="Fonction">
-
-  <h2>Parcours de Formation</h2>
-
-  <select id="stage">
-
-    <option value="">Choisir Stage</option>
-
-    <option value="CI">
-      CI - Camp d’Initiation
-    </option>
-
-    <option value="CEP">
-      CEP - Camp École Préparatoire
-    </option>
-
-    <option value="CNB">
-      CNB - Camp National de Branches
-    </option>
-
-    <option value="CBB">
-      CBB - Camp Badge de Bois
-    </option>
-
-  </select>
-
-  <select id="branche">
-
-    <option value="">Choisir Branche</option>
-
-    <option value="Jaune">
-      Jaune - Louveteaux
-    </option>
-
-    <option value="Verte">
-      Verte - Éclaireurs
-    </option>
-
-    <option value="Rouge">
-      Rouge - Aînés/Routiers
-    </option>
-
-  </select>
-
-  <input
-    type="number"
-    id="annee_stage"
-    placeholder="Année du stage"
-  >
-
-  <input
-    type="text"
-    id="lieu_stage"
-    placeholder="Lieu du stage"
-  >
-
-  <button onclick="enregistrerDossier()">
-    Enregistrer Dossier
-  </button>
-
-  <hr>
-
-  <input
-    type="text"
-    id="search"
-    placeholder="Recherche par nom..."
-    onkeyup="chargerParticipants()"
-  >
-
-  <table>
-
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Prénom</th>
-        <th>Nom</th>
-        <th>District</th>
-        <th>Fonction</th>
-      </tr>
-    </thead>
-
-    <tbody id="tableBody"></tbody>
-
-  </table>
-
-  <hr>
-
-  <h2>Filtrer par année</h2>
-
-  <input
-    type="number"
-    id="filtre_annee"
-    placeholder="Exemple 2024"
-  >
-
-  <button onclick="filtrerParAnnee()">
-    Filtrer
-  </button>
-
-  <table>
-
-    <thead>
-
-      <tr>
-        <th>Participant</th>
-        <th>Stage</th>
-        <th>Branche</th>
-        <th>Année</th>
-        <th>Lieu</th>
-      </tr>
-
-    </thead>
-
-    <tbody id="formationTable"></tbody>
-
-  </table>
-
-</div>
-
-<script>
-
-const SUPABASE_URL =
-"https://gdjenoyyclazwbqvdmcx.supabase.co";
-
-const SUPABASE_KEY =
-"sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
-
-const client = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-
 async function enregistrerDossier(){
-const first_name = document.getElementById("first_name").value;
-const last_name = document.getElementById("last_name").value;
-const groupe_scout = document.getElementById("groupe_scout").value;
-const district = document.getElementById("district").value;
-const telephone = document.getElementById("telephone").value;
-const email = document.getElementById("email").value;
-const fonction = document.getElementById("fonction").value;
-const stage = document.getElementById("stage").value;
-const branche = document.getElementById("branche").value;
-const annee_stage = document.getElementById("annee_stage").value;
-const lieu_stage = document.getElementById("lieu_stage").value;
 
-if (
-  !first_name ||
-  !last_name ||
-  !groupe_scout ||
-  !district ||
-  !telephone ||
-  !email ||
-  !fonction ||
-  !stage ||
-  !branche ||
-  !annee_stage ||
-  !lieu_stage
-) {
-  alert("Tous les champs sont obligatoires");
-  return;
-}
+  const first_name =
+    document.getElementById("first_name").value.trim();
 
-const { data: existingParticipant } = await client
-  .from("Participants")
-  .select("*")
-  .eq("first_name", first_name)
-  .eq("last_name", last_name)
-  .eq("telephone", telephone);
+  const last_name =
+    document.getElementById("last_name").value.trim();
 
-if (existingParticipant && existingParticipant.length > 0) {
-  alert("Participant déjà enregistré");
-  return;
-}
+  const date_naissance =
+    document.getElementById("date_naissance").value.trim();
+
+  const lieu_naissance =
+    document.getElementById("lieu_naissance").value.trim();
+
+  const phone =
+    document.getElementById("phone").value.trim();
+
+  const email =
+    document.getElementById("email").value.trim();
+
+  const groupe_scout =
+    document.getElementById("groupe_scout").value.trim();
+
+  const district =
+    document.getElementById("district").value.trim();
+
+  const fonction =
+    document.getElementById("fonction").value.trim();
+
+  const stage =
+    document.getElementById("stage").value.trim();
+
+  const branche =
+    document.getElementById("branche").value.trim();
+
+  const annee_stage =
+    document.getElementById("annee_stage").value.trim();
+
+  const lieu_stage =
+    document.getElementById("lieu_stage").value.trim();
+
+  // Vérification champs obligatoires
+  if(
+    !first_name ||
+    !last_name ||
+    !date_naissance ||
+    !lieu_naissance ||
+    !phone ||
+    !email ||
+    !groupe_scout ||
+    !district ||
+    !fonction ||
+    !stage ||
+    !branche ||
+    !annee_stage ||
+    !lieu_stage
+  ){
+    alert("Tous les champs sont obligatoires");
+    return;
+  }
+
+  // Vérification doublon
+  const { data: existingParticipant } = await client
+    .from("Participants")
+    .select("*")
+    .eq("first_name", first_name)
+    .eq("last_name", last_name)
+    .eq("phone", phone);
+
+  if(existingParticipant && existingParticipant.length > 0){
+    alert("Participant déjà enregistré");
+    return;
+  }
+
+  // Création participant
   const participant = {
 
-    first_name:
-      document.getElementById("first_name").value,
+    first_name: first_name,
 
-    last_name:
-      document.getElementById("last_name").value,
+    last_name: last_name,
 
-    groupe_scout:
-      document.getElementById("groupe_scout").value,
+    groupe_scout: groupe_scout,
 
-    district:
-      document.getElementById("district").value,
+    district: district,
 
-    fonction:
-      document.getElementById("fonction").value,
+    fonction: fonction,
 
-    date_naissance:
-      document.getElementById("date_naissance").value,
+    date_naissance: date_naissance,
 
-    lieu_naissance:
-      document.getElementById("lieu_naissance").value,
+    lieu_naissance: lieu_naissance,
 
-    phone:
-      document.getElementById("phone").value,
+    phone: phone,
 
-    email:
-      document.getElementById("email").value
+    email: email
   };
 
   const { data, error } = await client
@@ -309,21 +106,18 @@ if (existingParticipant && existingParticipant.length > 0) {
 
   const participantId = data[0].id;
 
+  // Création formation
   const formation = {
 
     participant_id: participantId,
 
-    stage:
-      document.getElementById("stage").value,
+    stage: stage,
 
-    branche:
-      document.getElementById("branche").value,
+    branche: branche,
 
-    annee_stage:
-      document.getElementById("annee_stage").value,
+    annee_stage: annee_stage,
 
-    lieu_stage:
-      document.getElementById("lieu_stage").value
+    lieu_stage: lieu_stage
   };
 
   const { error: formationError } = await client
@@ -336,118 +130,23 @@ if (existingParticipant && existingParticipant.length > 0) {
   }
 
   alert("Dossier enregistré");
-document.querySelector("form").reset();
+
+  // Vider le formulaire
+  document.getElementById("first_name").value = "";
+  document.getElementById("last_name").value = "";
+  document.getElementById("date_naissance").value = "";
+  document.getElementById("lieu_naissance").value = "";
+  document.getElementById("phone").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("groupe_scout").value = "";
+  document.getElementById("district").value = "";
+  document.getElementById("fonction").value = "";
+  document.getElementById("stage").value = "";
+  document.getElementById("branche").value = "";
+  document.getElementById("annee_stage").value = "";
+  document.getElementById("lieu_stage").value = "";
+
   chargerParticipants();
 
   filtrerParAnnee();
 }
-
-async function chargerParticipants(){
-
-  const recherche =
-    document.getElementById("search").value;
-
-  let query = client
-    .from("Participants")
-    .select("*");
-
-  if(recherche){
-
-    query = query.ilike(
-      "last_name",
-      `%${recherche}%`
-    );
-  }
-
-  const { data, error } = await query;
-
-  if(error){
-    console.log(error);
-    return;
-  }
-
-  const table =
-    document.getElementById("tableBody");
-
-  table.innerHTML = "";
-
-  data.forEach(participant => {
-
-    table.innerHTML += `
-      <tr>
-        <td>${participant.id}</td>
-        <td>${participant.first_name || ""}</td>
-        <td>${participant.last_name || ""}</td>
-        <td>${participant.district || ""}</td>
-        <td>${participant.fonction || ""}</td>
-      </tr>
-    `;
-  });
-}
-
-async function filtrerParAnnee(){
-
-  const annee =
-    document.getElementById("filtre_annee").value;
-
-  let query = client
-    .from("Formation")
-    .select(`
-      *,
-      Participants(
-        first_name,
-        last_name
-      )
-    `);
-
-  if(annee){
-
-    query = query.eq(
-      "annee_stage",
-      annee
-    );
-  }
-
-  const { data, error } = await query;
-
-  if(error){
-    console.log(error);
-    return;
-  }
-
-  const table =
-    document.getElementById("formationTable");
-
-  table.innerHTML = "";
-
-  data.forEach(formation => {
-
-    table.innerHTML += `
-      <tr>
-
-        <td>
-          ${formation.Participants?.first_name || ""}
-          ${formation.Participants?.last_name || ""}
-        </td>
-
-        <td>${formation.stage || ""}</td>
-
-        <td>${formation.branche || ""}</td>
-
-        <td>${formation.annee_stage || ""}</td>
-
-        <td>${formation.lieu_stage || ""}</td>
-
-      </tr>
-    `;
-  });
-}
-
-chargerParticipants();
-
-filtrerParAnnee();
-
-</script>
-
-</body>
-  </html>
