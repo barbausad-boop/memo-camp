@@ -297,17 +297,7 @@ async function enregistrerDossier(){
   }
 
   alert("Dossier enregistré");
-document.getElementById("prenom").value = "";
-document.getElementById("nom").value = "";
-document.getElementById("date_naissance").value = "";
-document.getElementById("district").value = "";
-document.getElementById("telephone").value = "";
-document.getElementById("email").value = "";
-document.getElementById("fonction").value = "";
-document.getElementById("stage").value = "";
-document.getElementById("branche").value = "";
-document.getElementById("annee_stage").value = "";
-document.getElementById("lieu_stage").value = "";
+document.querySelector("form").reset();
   chargerParticipants();
 
   filtrerParAnnee();
