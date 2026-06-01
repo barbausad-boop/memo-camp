@@ -2,10 +2,11 @@
 
 **Plateforme de gestion complète des formations scoutes - Scouts du Sénégal**
 
-## 🔗 Accès à l'application
+---
 
-### **Version Complète avec Régions & Districts** ✅
-👉 **https://memo-camp.vercel.app/index_final.html**
+## 🚀 ACCÈS À L'APPLICATION
+
+# 👉 **[https://memo-camp.vercel.app/index_final.html](https://memo-camp.vercel.app/index_final.html)**
 
 ---
 
