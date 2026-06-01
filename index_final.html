@@ -122,9 +122,35 @@
         .stats-box li:last-child {
             border-bottom: none;
         }
+
+        .logo-bg {
+            position: fixed;
+            top: 50%;
+            right: 5%;
+            opacity: 0.08;
+            z-index: -1;
+            transform: translateY(-50%);
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(-50%) translateX(0); }
+            50% { transform: translateY(-50%) translateX(20px); }
+        }
+
+        @media (max-width: 768px) {
+            .logo-bg {
+                opacity: 0.05;
+                width: 80px !important;
+                height: 80px !important;
+            }
+        }
     </style>
 </head>
 <body>
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 500'%3E%3C/svg%3E" class="logo-bg" id="logoBg" width="80" height="80" alt="Logo Scouts de Thiès">
+    
     <div class="container">
         <h1>📋 Memo-Camp - Gestion des Formations Scoutes</h1>
         
@@ -334,5 +360,57 @@
     </div>
 
     <script src="script_final.js"></script>
+    <script>
+        // Charger le logo SVG Scouts de Thiès
+        async function chargerLogo() {
+            const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="80" height="80">
+                <!-- Carte du Sénégal -->
+                <path d="M 80 200 Q 80 80 180 60 Q 220 50 240 80 Q 250 100 240 150 Q 230 180 200 200 Q 150 220 80 200 Z" fill="#FFD700" stroke="#FF8C00" stroke-width="3"/>
+                
+                <!-- Arbre -->
+                <g id="arbre">
+                    <ellipse cx="260" cy="180" rx="15" ry="20" fill="#228B22"/>
+                    <ellipse cx="275" cy="150" rx="20" ry="25" fill="#228B22"/>
+                    <ellipse cx="290" cy="140" rx="18" ry="22" fill="#228B22"/>
+                    <ellipse cx="305" cy="155" rx="15" ry="20" fill="#228B22"/>
+                    <path d="M 270 180 L 270 230" stroke="#228B22" stroke-width="4" fill="none"/>
+                    
+                    <!-- Feuilles détaillées -->
+                    <line x1="260" y1="170" x2="245" y2="145" stroke="#228B22" stroke-width="2"/>
+                    <line x1="265" y1="165" x2="280" y2="130" stroke="#228B22" stroke-width="2"/>
+                    <line x1="275" y1="160" x2="305" y2="145" stroke="#228B22" stroke-width="2"/>
+                </g>
+                
+                <!-- Badge fleur -->
+                <circle cx="270" cy="230" r="18" fill="white" stroke="#228B22" stroke-width="2"/>
+                <circle cx="270" cy="230" r="14" fill="#FFD700" stroke="#FF8C00" stroke-width="1"/>
+                <path d="M 270 230 L 275 220 L 280 225 L 275 235 Z" fill="#FF0000"/>
+                
+                <!-- Train -->
+                <g id="train">
+                    <!-- Locomotive -->
+                    <rect x="120" y="320" width="90" height="40" rx="5" fill="#DC143C" stroke="#000" stroke-width="2"/>
+                    <circle cx="150" cy="365" r="12" fill="#000"/>
+                    <circle cx="180" cy="365" r="12" fill="#000"/>
+                    <rect x="125" y="300" width="30" height="25" fill="#DC143C" stroke="#000" stroke-width="1"/>
+                    <rect x="125" y="300" width="15" height="10" fill="#FFD700" stroke="#000" stroke-width="1"/>
+                    
+                    <!-- Wagons -->
+                    <rect x="210" y="325" width="50" height="30" rx="3" fill="#228B22" stroke="#000" stroke-width="2"/>
+                    <circle cx="225" cy="360" r="8" fill="#000"/>
+                    <circle cx="250" cy="360" r="8" fill="#000"/>
+                </g>
+                
+                <!-- Texte -->
+                <text x="320" y="320" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#000">SCOUTS</text>
+                <text x="320" y="355" font-family="Arial, sans-serif" font-size="28" fill="#DC143C" font-weight="bold">DE</text>
+                <text x="370" y="355" font-family="Arial, sans-serif" font-size="28" fill="#000" font-weight="bold">THIES</text>
+            </svg>`;
+            
+            document.getElementById('logoBg').innerHTML = logoSvg;
+        }
+        
+        chargerLogo();
+    </script>
 </body>
 </html>
