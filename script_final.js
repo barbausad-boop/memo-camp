@@ -3,6 +3,8 @@ const SUPABASE_KEY = "sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
 
 let client;
 let supabaseConnected = false;
+let participantActuelId = null; // Stocker l'ID du participant en cours d'édition
+let formationsExistantes = {}; // Stocker les formations existantes
 
 try {
   client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -169,6 +171,188 @@ function showTab(tabId) {
   } catch (error) {
     logError("showTab", error);
   }
+}
+
+// ============================================
+// DÉTECTION DE PARTICIPANT EXISTANT
+// ============================================
+async function detecterParticipantExistant() {
+  try {
+    const firstName = document.getElementById('first_name').value.trim();
+    const lastName = document.getElementById('last_name').value.trim();
+
+    // Reset
+    document.getElementById('participant-detection').style.display = 'none';
+    document.getElementById('formations-completed').style.display = 'none';
+    participantActuelId = null;
+    formationsExistantes = {};
+
+    if (!firstName || !lastName) return;
+
+    if (!supabaseConnected) {
+      console.log("⏭️ Supabase indisponible - Pas de détection");
+      return;
+    }
+
+    console.log(`🔍 Recherche de ${firstName} ${lastName}...`);
+
+    // Chercher le participant par prénom et nom
+    const { data: participants, error } = await client
+      .from('Participants')
+      .select('*')
+      .ilike('first_name', `%${firstName}%`)
+      .ilike('last_name', `%${lastName}%`);
+
+    if (error) throw error;
+
+    if (participants && participants.length > 0) {
+      const participant = participants[0]; // Prendre le premier match
+      participantActuelId = participant.id;
+
+      console.log(`✅ Participant trouvé: ID ${participantActuelId}`);
+
+      // Charger les formations existantes
+      const { data: formations, error: formError } = await client
+        .from('Formation')
+        .select('*, stage_id(code), branche_id(nom)')
+        .eq('participant_id', participantActuelId);
+
+      if (formError) throw formError;
+
+      if (formations && formations.length > 0) {
+        // Organiser les formations par stage
+        formations.forEach(f => {
+          formationsExistantes[f.stage_id.code] = {
+            annee: f.annee_stage,
+            lieu: f.lieu_stage,
+            branche: f.branche_id ? f.branche_id.nom : null,
+            id: f.id
+          };
+        });
+
+        afficherDetectionParticipant(participant, formations);
+      }
+    } else {
+      console.log("ℹ️ Aucun participant existant trouvé");
+    }
+
+  } catch (error) {
+    logError("detecterParticipantExistant", error);
+  }
+}
+
+// ============================================
+// AFFICHER DÉTECTION DE PARTICIPANT
+// ============================================
+function afficherDetectionParticipant(participant, formations) {
+  const detectionDiv = document.getElementById('participant-detection');
+  const contentDiv = document.getElementById('detection-content');
+
+  let html = `<p><strong>Participant:</strong> ${participant.first_name} ${participant.last_name}</p>`;
+  html += `<p><strong>Région:</strong> ${participant.region_id || '?'} | <strong>District:</strong> ${participant.district_id || '?'}</p>`;
+  
+  if (formations.length > 0) {
+    html += `<div class="participant-history">`;
+    html += `<strong>📚 Formations complétées:</strong><br>`;
+    formations.forEach(f => {
+      html += `
+        <div class="stage-completed">
+          <span class="check">✓</span> <strong>${f.stage_id.code}</strong> (${f.annee_stage}) 
+          ${f.branche_id ? `- Branche: ${f.branche_id.nom}` : ''}
+          ${f.lieu_stage ? `- Lieu: ${f.lieu_stage}` : ''}
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  contentDiv.innerHTML = html;
+  detectionDiv.style.display = 'block';
+
+  // Pré-cocher les formations complétées
+  Object.keys(formationsExistantes).forEach(stageCode => {
+    const checkbox = document.getElementById(`has_${stageCode.toLowerCase().replace('.', '')}`);
+    if (checkbox) {
+      checkbox.disabled = true;
+      checkbox.checked = true;
+      const fields = document.getElementById(`${stageCode.toLowerCase().replace('.', '')}_fields`);
+      if (fields) {
+        fields.classList.remove('active');
+        fields.style.display = 'none';
+      }
+    }
+  });
+
+  console.log(`✅ Détection affichée - ${formations.length} formations trouvées`);
+}
+
+// ============================================
+// CONTINUER LE PARCOURS
+// ============================================
+async function continuerParticipant() {
+  console.log(`📝 Continuation du parcours pour participant ${participantActuelId}`);
+  
+  // Masquer la détection
+  document.getElementById('participant-detection').style.display = 'none';
+
+  // Afficher les formations complétées
+  afficherFormationsCompletees();
+
+  // L'utilisateur peut cocher les prochaines formations
+  // Les formations complétées restent grisées et cochées
+}
+
+// ============================================
+// AFFICHER FORMATIONS COMPLÉTÉES
+// ============================================
+function afficherFormationsCompletees() {
+  const formationsCompletedDiv = document.getElementById('formations-completed');
+  const listDiv = document.getElementById('formations-completed-list');
+
+  if (Object.keys(formationsExistantes).length === 0) {
+    return;
+  }
+
+  let html = '';
+  Object.entries(formationsExistantes).forEach(([stageCode, details]) => {
+    html += `
+      <div class="stage-completed">
+        <span class="check">✓</span> <strong>${stageCode}</strong> (${details.annee})
+        ${details.branche ? `- ${details.branche}` : ''}
+        ${details.lieu ? `- ${details.lieu}` : ''}
+      </div>
+    `;
+  });
+
+  listDiv.innerHTML = html;
+  formationsCompletedDiv.style.display = 'block';
+}
+
+// ============================================
+// RÉINITIALISER LE FORMULAIRE
+// ============================================
+function reinitialiserFormulaire() {
+  document.querySelector('form').reset();
+  document.getElementById('participant-detection').style.display = 'none';
+  document.getElementById('formations-completed').style.display = 'none';
+  
+  // Réactiver tous les checkboxes
+  ['ci', 'cep', 'cnb', 'cbb'].forEach(stage => {
+    const checkbox = document.getElementById(`has_${stage}`);
+    if (checkbox) {
+      checkbox.disabled = false;
+      checkbox.checked = false;
+    }
+    const fields = document.getElementById(`${stage}_fields`);
+    if (fields) {
+      fields.classList.remove('active');
+    }
+  });
+
+  participantActuelId = null;
+  formationsExistantes = {};
+  
+  console.log("🔄 Formulaire réinitialisé");
 }
 
 // ============================================
@@ -357,7 +541,7 @@ function validerHierarchieStages() {
 }
 
 // ============================================
-// ENREGISTRER PARTICIPANT
+// ENREGISTRER PARTICIPANT (MODE ÉDITION OU CRÉATION)
 // ============================================
 async function enregistrerParticipant() {
   try {
@@ -378,30 +562,39 @@ async function enregistrerParticipant() {
       return;
     }
 
-    const participant = {
-      first_name: firstName,
-      last_name: lastName,
-      date_naissance: document.getElementById('date_naissance').value || null,
-      lieu_naissance: document.getElementById('lieu_naissance').value || null,
-      phone: document.getElementById('phone').value || null,
-      email: document.getElementById('email').value || null,
-      fonction_actuelle: document.getElementById('fonction_actuelle').value || null,
-      groupe_base: document.getElementById('groupe_base').value || null,
-      region_id: parseInt(regionId),
-      district_id: parseInt(districtId)
-    };
+    let participantId = participantActuelId;
 
-    const { data: participantData, error: participantError } = await client
-      .from('Participants')
-      .insert([participant])
-      .select();
+    // SI aucun participant existant, créer un nouveau
+    if (!participantId) {
+      console.log("➕ Création d'un nouveau participant");
 
-    if (participantError) throw participantError;
+      const participant = {
+        first_name: firstName,
+        last_name: lastName,
+        date_naissance: document.getElementById('date_naissance').value || null,
+        lieu_naissance: document.getElementById('lieu_naissance').value || null,
+        phone: document.getElementById('phone').value || null,
+        email: document.getElementById('email').value || null,
+        fonction_actuelle: document.getElementById('fonction_actuelle').value || null,
+        groupe_base: document.getElementById('groupe_base').value || null,
+        region_id: parseInt(regionId),
+        district_id: parseInt(districtId)
+      };
 
-    const participantId = participantData[0].id;
-    console.log("✅ Participant créé:", participantId);
+      const { data: participantData, error: participantError } = await client
+        .from('Participants')
+        .insert([participant])
+        .select();
 
-    const formations = [];
+      if (participantError) throw participantError;
+
+      participantId = participantData[0].id;
+      console.log("✅ Nouveau participant créé:", participantId);
+    } else {
+      console.log(`📝 Mise à jour du participant existant: ${participantId}`);
+    }
+
+    // Récupérer les stages
     const stagesMap = {
       'ci': { code: 'C.I', ordre: 1, needBranch: false },
       'cep': { code: 'C.E.P', ordre: 2, needBranch: true },
@@ -409,9 +602,17 @@ async function enregistrerParticipant() {
       'cbb': { code: 'C.B.B', ordre: 4, needBranch: false }
     };
 
+    const formations = [];
+
     for (const [stageKey, stageInfo] of Object.entries(stagesMap)) {
       const hasStage = document.getElementById(`has_${stageKey}`).checked;
       
+      // Ignorer les formations déjà complétées
+      if (formationsExistantes[stageInfo.code]) {
+        console.log(`⏭️ ${stageInfo.code} déjà complété - Ignoré`);
+        continue;
+      }
+
       if (hasStage) {
         const annee = document.getElementById(`${stageKey}_annee`).value;
         const lieu = document.getElementById(`${stageKey}_lieu`).value || null;
@@ -446,29 +647,33 @@ async function enregistrerParticipant() {
             annee_stage: parseInt(annee),
             lieu_stage: lieu
           });
+
+          console.log(`✅ Formation ajoutée: ${stageInfo.code} (${annee})`);
         } catch (error) {
           logError("Chargement stage", error);
         }
       }
     }
 
+    // Ajouter les formations SEULEMENT si des nouvelles ont été cochées
     if (formations.length > 0) {
       const { error: formationError } = await client
         .from('Formation')
         .insert(formations);
 
       if (formationError) throw formationError;
+      
+      console.log(`✅ ${formations.length} nouvelle(s) formation(s) enregistrée(s)`);
+    } else {
+      console.log("ℹ️ Aucune nouvelle formation à ajouter");
     }
 
-    alert("✅ Participant et formations enregistrés avec succès!");
+    alert("✅ Enregistrement réussi !\n\nParticipant continué sans doublons.");
 
-    document.querySelector('form').reset();
-    document.getElementById('region_id').value = '';
-    document.getElementById('district_id').value = '';
-    ['ci', 'cep', 'cnb', 'cbb'].forEach(stage => {
-      document.getElementById(`${stage}_fields`).classList.remove('active');
-    });
+    // Réinitialiser
+    reinitialiserFormulaire();
 
+    // Recharger les données
     await mettreAJourStatistiques();
     await chargerParticipants();
 
