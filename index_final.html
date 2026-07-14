@@ -139,6 +139,73 @@
             50% { transform: translateY(-50%) translateX(20px); }
         }
 
+        /* Styles pour la détection de participant */
+        .participant-found {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .participant-found h3 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+
+        .participant-history {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .participant-history strong {
+            color: #667eea;
+        }
+
+        .stage-completed {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .stage-completed .check {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .btn-edit-participant {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn-edit-participant:hover {
+            background: #0b7dda;
+        }
+
+        .btn-new-participant {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-new-participant:hover {
+            background: #5a6268;
+        }
+
         @media (max-width: 768px) {
             .logo-bg {
                 opacity: 0.05;
@@ -178,17 +245,30 @@
 
         <div id="tab-inscription" class="tab-content active">
             <h2>Enregistrer un nouveau participant</h2>
+            
+            <!-- Détection de participant existant -->
+            <div id="participant-detection" style="display:none;">
+                <div class="participant-found">
+                    <h3>✅ Participant trouvé !</h3>
+                    <div id="detection-content"></div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn-edit-participant" onclick="continuerParticipant()">📝 Continuer le parcours</button>
+                        <button class="btn-new-participant" onclick="reinitialiserFormulaire()">➕ Créer un nouveau</button>
+                    </div>
+                </div>
+            </div>
+
             <form onsubmit="event.preventDefault(); enregistrerParticipant();">
 
                 <h3>👤 Informations personnelles</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="first_name">Prénom *</label>
-                        <input type="text" id="first_name" required>
+                        <input type="text" id="first_name" required onchange="detecterParticipantExistant()">
                     </div>
                     <div class="form-group">
                         <label for="last_name">Nom *</label>
-                        <input type="text" id="last_name" required>
+                        <input type="text" id="last_name" required onchange="detecterParticipantExistant()">
                     </div>
                 </div>
 
@@ -243,6 +323,14 @@
 
                 <h3>🎓 Parcours de Formation</h3>
                 
+                <!-- Affichage des formations complétées -->
+                <div id="formations-completed" style="display:none;">
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: #1976d2; margin-top: 0;">✓ Formations déjà complétées :</h4>
+                        <div id="formations-completed-list"></div>
+                    </div>
+                </div>
+
                 <div class="formation-card">
                     <h4>1️⃣ C.I (Camp Initiation)</h4>
                     <label>
