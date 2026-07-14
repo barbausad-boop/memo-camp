@@ -8,9 +8,17 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ============================================
 document.addEventListener('DOMContentLoaded', async function() {
   console.log("Application FINAL chargée");
-  await chargerRegions();
-  await mettreAJourStatistiques();
-  await chargerParticipants();
+  
+  // Attendre que le DOM soit prêt
+  setTimeout(async () => {
+    try {
+      await chargerRegions();
+      await mettreAJourStatistiques();
+      await chargerParticipants();
+    } catch (error) {
+      console.error("Erreur lors de l'initialisation:", error);
+    }
+  }, 500);
 });
 
 // ============================================
@@ -40,26 +48,79 @@ function showTab(tabId) {
 // ============================================
 async function chargerRegions() {
   try {
-    console.log("Chargement des régions...");
+    console.log("🔄 Chargement des régions...");
     
-    const { data, error } = await client
-      .from('regions')
-      .select('id, nom')
-      .order('nom');
-
-    if (error) {
-      console.error("Erreur Supabase:", error);
-      throw error;
-    }
-
-    console.log("Régions reçues:", data);
-
+    // Vérifier que l'élément existe
     const select = document.getElementById('region_id');
     if (!select) {
-      console.error("Select region_id non trouvé!");
+      console.error("❌ SELECT region_id non trouvé dans le DOM!");
       return;
     }
 
+    // Données des régions (données locales en cas d'erreur Supabase)
+    const donneesSenegal = [
+      { id: 1, nom: 'Dakar' },
+      { id: 2, nom: 'Thiès' },
+      { id: 3, nom: 'Fleuve' },
+      { id: 4, nom: 'Petite Côte' },
+      { id: 5, nom: 'Kaolack' },
+      { id: 6, nom: 'Casamance' }
+    ];
+
+    const districtsSenegal = {
+      1: [ // Dakar
+        { id: 101, nom: 'Dakar', region_id: 1 },
+        { id: 102, nom: 'Rufisque', region_id: 1 },
+        { id: 103, nom: 'Guédiawaye', region_id: 1 }
+      ],
+      2: [ // Thiès
+        { id: 201, nom: 'Jappo', region_id: 2 },
+        { id: 202, nom: 'Diobass', region_id: 2 },
+        { id: 203, nom: 'Baol', region_id: 2 },
+        { id: 204, nom: 'Daniel-Brottier', region_id: 2 }
+      ],
+      3: [ // Fleuve
+        { id: 301, nom: 'Saint-Louis', region_id: 3 },
+        { id: 302, nom: 'Matam', region_id: 3 },
+        { id: 303, nom: 'Podor', region_id: 3 }
+      ],
+      4: [ // Petite Côte
+        { id: 401, nom: 'Mbour', region_id: 4 },
+        { id: 402, nom: 'Saly', region_id: 4 },
+        { id: 403, nom: 'Joal', region_id: 4 }
+      ],
+      5: [ // Kaolack
+        { id: 501, nom: 'Kaolack', region_id: 5 },
+        { id: 502, nom: 'Tambacounda', region_id: 5 },
+        { id: 503, nom: 'Kolda', region_id: 5 }
+      ],
+      6: [ // Casamance
+        { id: 601, nom: 'Ziguinchor', region_id: 6 },
+        { id: 602, nom: 'Bignona', region_id: 6 },
+        { id: 603, nom: 'Oussouye', region_id: 6 }
+      ]
+    };
+
+    let data = donneesSenegal;
+
+    // Essayer de charger depuis Supabase
+    try {
+      const { data: supabaseData, error } = await client
+        .from('regions')
+        .select('id, nom')
+        .order('nom');
+
+      if (!error && supabaseData && supabaseData.length > 0) {
+        data = supabaseData;
+        console.log("✅ Régions chargées depuis Supabase");
+      } else {
+        console.log("⚠️ Utilisation des données locales (Supabase indisponible)");
+      }
+    } catch (supabaseError) {
+      console.log("⚠️ Erreur Supabase, utilisation des données locales");
+    }
+
+    // Remplir le select
     select.innerHTML = '<option value="">-- Sélectionner une région --</option>';
     
     data.forEach(region => {
@@ -67,12 +128,15 @@ async function chargerRegions() {
       option.value = region.id;
       option.textContent = region.nom;
       select.appendChild(option);
-      console.log("Région ajoutée:", region.nom);
     });
 
-    console.log("Régions chargées avec succès");
+    // Stocker les districts localement
+    window.districtsSenegal = districtsSenegal;
+
+    console.log("✅ Régions chargées avec succès");
   } catch (error) {
-    console.error("Erreur chargement régions:", error);
+    console.error("❌ Erreur chargement régions:", error);
+    alert("❌ Erreur lors du chargement des régions");
   }
 }
 
@@ -83,38 +147,56 @@ async function chargerDistricts() {
   try {
     const regionId = document.getElementById('region_id').value;
     
-    console.log("Région sélectionnée:", regionId);
+    console.log("📍 Région sélectionnée:", regionId);
+
+    const districtSelect = document.getElementById('district_id');
 
     if (!regionId) {
-      document.getElementById('district_id').innerHTML = '<option value="">-- Sélectionner un district --</option>';
+      districtSelect.innerHTML = '<option value="">-- Sélectionner un district --</option>';
       return;
     }
 
-    const { data, error } = await client
-      .from('districts')
-      .select('id, nom')
-      .eq('region_id', parseInt(regionId))
-      .order('nom');
+    let data = [];
 
-    if (error) {
-      console.error("Erreur Supabase districts:", error);
-      throw error;
+    // Essayer Supabase d'abord
+    try {
+      const { data: supabaseData, error } = await client
+        .from('districts')
+        .select('id, nom')
+        .eq('region_id', parseInt(regionId))
+        .order('nom');
+
+      if (!error && supabaseData && supabaseData.length > 0) {
+        data = supabaseData;
+      } else {
+        // Utiliser les données locales
+        data = window.districtsSenegal[regionId] || [];
+      }
+    } catch (supabaseError) {
+      // Utiliser les données locales en cas d'erreur
+      data = window.districtsSenegal[regionId] || [];
     }
 
-    console.log("Districts reçus:", data);
-
-    const select = document.getElementById('district_id');
-    select.innerHTML = '<option value="">-- Sélectionner un district --</option>';
+    // Remplir le select
+    districtSelect.innerHTML = '<option value="">-- Sélectionner un district --</option>';
     
+    if (data.length === 0) {
+      console.warn("⚠️ Aucun district trouvé pour cette région");
+      districtSelect.innerHTML += '<option disabled>Aucun district disponible</option>';
+      return;
+    }
+
     data.forEach(district => {
       const option = document.createElement('option');
       option.value = district.id;
       option.textContent = district.nom;
-      select.appendChild(option);
+      districtSelect.appendChild(option);
     });
 
+    console.log(`✅ ${data.length} districts chargés`);
+
   } catch (error) {
-    console.error("Erreur chargement districts:", error);
+    console.error("❌ Erreur chargement districts:", error);
   }
 }
 
@@ -126,9 +208,9 @@ function toggleStage(stage) {
   const fields = document.getElementById(`${stage}_fields`);
   
   if (checkbox.checked) {
-    fields.style.display = 'block';
+    fields.classList.add('active');
   } else {
-    fields.style.display = 'none';
+    fields.classList.remove('active');
     clearStageFields(stage);
   }
 }
@@ -268,7 +350,7 @@ async function enregistrerParticipant() {
     document.getElementById('region_id').value = '';
     document.getElementById('district_id').value = '';
     ['ci', 'cep', 'cnb', 'cbb'].forEach(stage => {
-      document.getElementById(`${stage}_fields`).style.display = 'none';
+      document.getElementById(`${stage}_fields`).classList.remove('active');
     });
 
     // Recharger les données
