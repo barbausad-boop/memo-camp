@@ -1,13 +1,130 @@
 const SUPABASE_URL = "https://gdjenoyyclazwbqvdmcx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cUr1KyPEvF9jGMKsB3DO1A_lITF0XQK";
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let client;
+let supabaseConnected = false;
+
+try {
+  client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (error) {
+  console.error("❌ Erreur initialisation Supabase:", error);
+}
+
+// Données de secours pour les régions et districts
+const donneesSenegal = [
+  { id: 1, nom: 'Dakar' },
+  { id: 2, nom: 'Thiès' },
+  { id: 3, nom: 'Fleuve' },
+  { id: 4, nom: 'Petite Côte' },
+  { id: 5, nom: 'Kaolack' },
+  { id: 6, nom: 'Casamance' }
+];
+
+const districtsSenegal = {
+  1: [ // Dakar
+    { id: 101, nom: 'Dakar', region_id: 1 },
+    { id: 102, nom: 'Rufisque', region_id: 1 },
+    { id: 103, nom: 'Guédiawaye', region_id: 1 }
+  ],
+  2: [ // Thiès
+    { id: 201, nom: 'Jappo', region_id: 2 },
+    { id: 202, nom: 'Diobass', region_id: 2 },
+    { id: 203, nom: 'Baol', region_id: 2 },
+    { id: 204, nom: 'Daniel-Brottier', region_id: 2 }
+  ],
+  3: [ // Fleuve
+    { id: 301, nom: 'Saint-Louis', region_id: 3 },
+    { id: 302, nom: 'Matam', region_id: 3 },
+    { id: 303, nom: 'Podor', region_id: 3 }
+  ],
+  4: [ // Petite Côte
+    { id: 401, nom: 'Mbour', region_id: 4 },
+    { id: 402, nom: 'Saly', region_id: 4 },
+    { id: 403, nom: 'Joal', region_id: 4 }
+  ],
+  5: [ // Kaolack
+    { id: 501, nom: 'Kaolack', region_id: 5 },
+    { id: 502, nom: 'Tambacounda', region_id: 5 },
+    { id: 503, nom: 'Kolda', region_id: 5 }
+  ],
+  6: [ // Casamance
+    { id: 601, nom: 'Ziguinchor', region_id: 6 },
+    { id: 602, nom: 'Bignona', region_id: 6 },
+    { id: 603, nom: 'Oussouye', region_id: 6 }
+  ]
+};
+
+// Stocker les districts localement
+window.districtsSenegal = districtsSenegal;
+
+// ============================================
+// FONCTION UTILITAIRE: GESTION D'ERREURS
+// ============================================
+function showErrorWithDetails(title, error) {
+  let message = title + "\n\n";
+  
+  if (error instanceof TypeError) {
+    if (error.message.includes("Failed to fetch")) {
+      message += "❌ Impossible de se connecter à la base de données.\n";
+      message += "Raisons possibles:\n";
+      message += "• Pas de connexion internet\n";
+      message += "• Serveur Supabase inaccessible\n";
+      message += "• Problème de configuration CORS\n\n";
+      message += "⚠️ L'application fonctionne en mode hors ligne.\n";
+      message += "Les données sont stockées localement.";
+    } else {
+      message += error.message;
+    }
+  } else if (error.message) {
+    message += error.message;
+  } else {
+    message += JSON.stringify(error);
+  }
+  
+  console.error("Error Details:", error);
+  return message;
+}
+
+// Fonction pour logger les erreurs avec contexte
+function logError(context, error) {
+  console.error(`[${context}] ❌`, error);
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`${timestamp} - Erreur: ${context}`);
+}
+
+// ============================================
+// TEST DE CONNEXION SUPABASE
+// ============================================
+async function testSupabaseConnection() {
+  try {
+    console.log("🔍 Test de connexion Supabase...");
+    const { data, error } = await client
+      .from('regions')
+      .select('count', { count: 'exact', head: true });
+    
+    if (error) {
+      throw error;
+    }
+    
+    supabaseConnected = true;
+    console.log("✅ Supabase connecté avec succès");
+    return true;
+  } catch (error) {
+    supabaseConnected = false;
+    logError("Test Supabase", error);
+    console.warn("⚠️ Supabase indisponible - Mode hors ligne activé");
+    return false;
+  }
+}
 
 // ============================================
 // INITIALISATION
 // ============================================
 document.addEventListener('DOMContentLoaded', async function() {
-  console.log("Application FINAL chargée");
+  console.log("🚀 Application Memo-Camp chargée");
+  
+  // Tester la connexion Supabase
+  await testSupabaseConnection();
   
   // Attendre que le DOM soit prêt
   setTimeout(async () => {
@@ -15,8 +132,15 @@ document.addEventListener('DOMContentLoaded', async function() {
       await chargerRegions();
       await mettreAJourStatistiques();
       await chargerParticipants();
+      
+      // Afficher le statut de connexion
+      const status = supabaseConnected 
+        ? "🟢 Base de données connectée" 
+        : "🟡 Mode hors ligne (données locales)";
+      console.log(status);
+      
     } catch (error) {
-      console.error("Erreur lors de l'initialisation:", error);
+      logError("Initialisation application", error);
     }
   }, 500);
 });
@@ -25,21 +149,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 // GESTION DES ONGLETS
 // ============================================
 function showTab(tabId) {
-  const tabs = document.querySelectorAll('.tab-content');
-  tabs.forEach(tab => tab.classList.remove('active'));
+  try {
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => tab.classList.remove('active'));
 
-  const buttons = document.querySelectorAll('.tab-btn');
-  buttons.forEach(btn => btn.classList.remove('active'));
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
 
-  document.getElementById(tabId).classList.add('active');
-  event.target.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    event.target.classList.add('active');
 
-  if (tabId === 'tab-participants') {
-    chargerParticipants();
-  } else if (tabId === 'tab-promotions') {
-    chargerPromotions();
-  } else if (tabId === 'tab-statistiques') {
-    chargerStatistiques();
+    if (tabId === 'tab-participants') {
+      chargerParticipants();
+    } else if (tabId === 'tab-promotions') {
+      chargerPromotions();
+    } else if (tabId === 'tab-statistiques') {
+      chargerStatistiques();
+    }
+  } catch (error) {
+    logError("showTab", error);
   }
 }
 
@@ -48,76 +176,36 @@ function showTab(tabId) {
 // ============================================
 async function chargerRegions() {
   try {
-    console.log("🔄 Chargement des régions...");
+    console.log("📍 Chargement des régions...");
     
-    // Vérifier que l'élément existe
     const select = document.getElementById('region_id');
     if (!select) {
-      console.error("❌ SELECT region_id non trouvé dans le DOM!");
-      return;
+      throw new Error("SELECT region_id non trouvé dans le DOM!");
     }
-
-    // Données des régions (données locales en cas d'erreur Supabase)
-    const donneesSenegal = [
-      { id: 1, nom: 'Dakar' },
-      { id: 2, nom: 'Thiès' },
-      { id: 3, nom: 'Fleuve' },
-      { id: 4, nom: 'Petite Côte' },
-      { id: 5, nom: 'Kaolack' },
-      { id: 6, nom: 'Casamance' }
-    ];
-
-    const districtsSenegal = {
-      1: [ // Dakar
-        { id: 101, nom: 'Dakar', region_id: 1 },
-        { id: 102, nom: 'Rufisque', region_id: 1 },
-        { id: 103, nom: 'Guédiawaye', region_id: 1 }
-      ],
-      2: [ // Thiès
-        { id: 201, nom: 'Jappo', region_id: 2 },
-        { id: 202, nom: 'Diobass', region_id: 2 },
-        { id: 203, nom: 'Baol', region_id: 2 },
-        { id: 204, nom: 'Daniel-Brottier', region_id: 2 }
-      ],
-      3: [ // Fleuve
-        { id: 301, nom: 'Saint-Louis', region_id: 3 },
-        { id: 302, nom: 'Matam', region_id: 3 },
-        { id: 303, nom: 'Podor', region_id: 3 }
-      ],
-      4: [ // Petite Côte
-        { id: 401, nom: 'Mbour', region_id: 4 },
-        { id: 402, nom: 'Saly', region_id: 4 },
-        { id: 403, nom: 'Joal', region_id: 4 }
-      ],
-      5: [ // Kaolack
-        { id: 501, nom: 'Kaolack', region_id: 5 },
-        { id: 502, nom: 'Tambacounda', region_id: 5 },
-        { id: 503, nom: 'Kolda', region_id: 5 }
-      ],
-      6: [ // Casamance
-        { id: 601, nom: 'Ziguinchor', region_id: 6 },
-        { id: 602, nom: 'Bignona', region_id: 6 },
-        { id: 603, nom: 'Oussouye', region_id: 6 }
-      ]
-    };
 
     let data = donneesSenegal;
 
-    // Essayer de charger depuis Supabase
-    try {
-      const { data: supabaseData, error } = await client
-        .from('regions')
-        .select('id, nom')
-        .order('nom');
+    // Essayer de charger depuis Supabase seulement si connecté
+    if (supabaseConnected) {
+      try {
+        const { data: supabaseData, error } = await Promise.race([
+          client.from('regions').select('id, nom').order('nom'),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout Supabase")), 5000)
+          )
+        ]);
 
-      if (!error && supabaseData && supabaseData.length > 0) {
-        data = supabaseData;
-        console.log("✅ Régions chargées depuis Supabase");
-      } else {
-        console.log("⚠️ Utilisation des données locales (Supabase indisponible)");
+        if (error) throw error;
+        if (supabaseData && supabaseData.length > 0) {
+          data = supabaseData;
+          console.log("✅ Régions chargées depuis Supabase");
+        }
+      } catch (supabaseError) {
+        logError("Chargement régions Supabase", supabaseError);
+        console.log("⚠️ Utilisation des données locales");
       }
-    } catch (supabaseError) {
-      console.log("⚠️ Erreur Supabase, utilisation des données locales");
+    } else {
+      console.log("⏭️ Supabase indisponible → Données locales");
     }
 
     // Remplir le select
@@ -130,13 +218,12 @@ async function chargerRegions() {
       select.appendChild(option);
     });
 
-    // Stocker les districts localement
-    window.districtsSenegal = districtsSenegal;
+    console.log(`✅ ${data.length} régions chargées`);
 
-    console.log("✅ Régions chargées avec succès");
   } catch (error) {
-    console.error("❌ Erreur chargement régions:", error);
-    alert("❌ Erreur lors du chargement des régions");
+    logError("chargerRegions", error);
+    const message = showErrorWithDetails("Erreur chargement régions", error);
+    console.error(message);
   }
 }
 
@@ -146,8 +233,7 @@ async function chargerRegions() {
 async function chargerDistricts() {
   try {
     const regionId = document.getElementById('region_id').value;
-    
-    console.log("📍 Région sélectionnée:", regionId);
+    console.log("🔄 Région sélectionnée:", regionId);
 
     const districtSelect = document.getElementById('district_id');
 
@@ -158,22 +244,32 @@ async function chargerDistricts() {
 
     let data = [];
 
-    // Essayer Supabase d'abord
-    try {
-      const { data: supabaseData, error } = await client
-        .from('districts')
-        .select('id, nom')
-        .eq('region_id', parseInt(regionId))
-        .order('nom');
+    // Essayer Supabase seulement si connecté
+    if (supabaseConnected) {
+      try {
+        const { data: supabaseData, error } = await Promise.race([
+          client
+            .from('districts')
+            .select('id, nom')
+            .eq('region_id', parseInt(regionId))
+            .order('nom'),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout Supabase")), 5000)
+          )
+        ]);
 
-      if (!error && supabaseData && supabaseData.length > 0) {
-        data = supabaseData;
-      } else {
-        // Utiliser les données locales
+        if (error) throw error;
+        if (supabaseData && supabaseData.length > 0) {
+          data = supabaseData;
+          console.log("✅ Districts chargés depuis Supabase");
+        } else {
+          data = window.districtsSenegal[regionId] || [];
+        }
+      } catch (supabaseError) {
+        logError("Chargement districts Supabase", supabaseError);
         data = window.districtsSenegal[regionId] || [];
       }
-    } catch (supabaseError) {
-      // Utiliser les données locales en cas d'erreur
+    } else {
       data = window.districtsSenegal[regionId] || [];
     }
 
@@ -181,7 +277,7 @@ async function chargerDistricts() {
     districtSelect.innerHTML = '<option value="">-- Sélectionner un district --</option>';
     
     if (data.length === 0) {
-      console.warn("⚠️ Aucun district trouvé pour cette région");
+      console.warn("⚠️ Aucun district trouvé");
       districtSelect.innerHTML += '<option disabled>Aucun district disponible</option>';
       return;
     }
@@ -196,7 +292,7 @@ async function chargerDistricts() {
     console.log(`✅ ${data.length} districts chargés`);
 
   } catch (error) {
-    console.error("❌ Erreur chargement districts:", error);
+    logError("chargerDistricts", error);
   }
 }
 
@@ -204,49 +300,60 @@ async function chargerDistricts() {
 // TOGGLE STAGE
 // ============================================
 function toggleStage(stage) {
-  const checkbox = document.getElementById(`has_${stage}`);
-  const fields = document.getElementById(`${stage}_fields`);
-  
-  if (checkbox.checked) {
-    fields.classList.add('active');
-  } else {
-    fields.classList.remove('active');
-    clearStageFields(stage);
+  try {
+    const checkbox = document.getElementById(`has_${stage}`);
+    const fields = document.getElementById(`${stage}_fields`);
+    
+    if (checkbox.checked) {
+      fields.classList.add('active');
+    } else {
+      fields.classList.remove('active');
+      clearStageFields(stage);
+    }
+  } catch (error) {
+    logError("toggleStage", error);
   }
 }
 
 function clearStageFields(stage) {
-  const fields = document.querySelectorAll(`#${stage}_fields input, #${stage}_fields select`);
-  fields.forEach(field => field.value = '');
+  try {
+    const fields = document.querySelectorAll(`#${stage}_fields input, #${stage}_fields select`);
+    fields.forEach(field => field.value = '');
+  } catch (error) {
+    logError("clearStageFields", error);
+  }
 }
 
 // ============================================
 // VALIDATION HIÉRARCHIQUE
 // ============================================
 function validerHierarchieStages() {
-  const stages = ['ci', 'cep', 'cnb', 'cbb'];
-  const checks = stages.map(s => document.getElementById(`has_${s}`).checked);
-  
-  // Vérifier que ce n'est pas un trou
-  for (let i = 0; i < checks.length - 1; i++) {
-    if (!checks[i] && checks[i + 1]) {
-      alert(`❌ Erreur : Vous devez compléter les stages en ordre`);
+  try {
+    const stages = ['ci', 'cep', 'cnb', 'cbb'];
+    const checks = stages.map(s => document.getElementById(`has_${s}`).checked);
+    
+    for (let i = 0; i < checks.length - 1; i++) {
+      if (!checks[i] && checks[i + 1]) {
+        alert(`❌ Erreur : Vous devez compléter les stages en ordre`);
+        return false;
+      }
+    }
+
+    if (document.getElementById('has_cep').checked && !document.getElementById('cep_branche').value) {
+      alert("❌ La branche est obligatoire pour le C.E.P");
       return false;
     }
-  }
 
-  // Vérifier que C.E.P et C.N.B ont une branche
-  if (document.getElementById('has_cep').checked && !document.getElementById('cep_branche').value) {
-    alert("❌ La branche est obligatoire pour le C.E.P");
+    if (document.getElementById('has_cnb').checked && !document.getElementById('cnb_branche').value) {
+      alert("❌ La branche est obligatoire pour le C.N.B");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    logError("validerHierarchieStages", error);
     return false;
   }
-
-  if (document.getElementById('has_cnb').checked && !document.getElementById('cnb_branche').value) {
-    alert("❌ La branche est obligatoire pour le C.N.B");
-    return false;
-  }
-
-  return true;
 }
 
 // ============================================
@@ -255,6 +362,11 @@ function validerHierarchieStages() {
 async function enregistrerParticipant() {
   try {
     if (!validerHierarchieStages()) return;
+
+    if (!supabaseConnected) {
+      alert("⚠️ Impossible d'enregistrer : base de données indisponible\n\nVérifiez votre connexion internet et réessayez.");
+      return;
+    }
 
     const firstName = document.getElementById('first_name').value.trim();
     const lastName = document.getElementById('last_name').value.trim();
@@ -266,7 +378,6 @@ async function enregistrerParticipant() {
       return;
     }
 
-    // Créer le participant
     const participant = {
       first_name: firstName,
       last_name: lastName,
@@ -288,9 +399,8 @@ async function enregistrerParticipant() {
     if (participantError) throw participantError;
 
     const participantId = participantData[0].id;
-    console.log("Participant créé:", participantId);
+    console.log("✅ Participant créé:", participantId);
 
-    // Créer les formations
     const formations = [];
     const stagesMap = {
       'ci': { code: 'C.I', ordre: 1, needBranch: false },
@@ -309,29 +419,36 @@ async function enregistrerParticipant() {
 
         if (stageInfo.needBranch) {
           const branchNom = document.getElementById(`${stageKey}_branche`).value;
-          const { data: branchData } = await client
-            .from('branches')
-            .select('id')
-            .eq('nom', branchNom)
-            .single();
-          
-          if (branchData) brancheId = branchData.id;
+          try {
+            const { data: branchData } = await client
+              .from('branches')
+              .select('id')
+              .eq('nom', branchNom)
+              .single();
+            
+            if (branchData) brancheId = branchData.id;
+          } catch (error) {
+            logError("Chargement branche", error);
+          }
         }
 
-        // Récupérer l'ID du stage
-        const { data: stageData } = await client
-          .from('stages')
-          .select('id')
-          .eq('code', stageInfo.code)
-          .single();
+        try {
+          const { data: stageData } = await client
+            .from('stages')
+            .select('id')
+            .eq('code', stageInfo.code)
+            .single();
 
-        formations.push({
-          participant_id: participantId,
-          stage_id: stageData.id,
-          branche_id: brancheId,
-          annee_stage: parseInt(annee),
-          lieu_stage: lieu
-        });
+          formations.push({
+            participant_id: participantId,
+            stage_id: stageData.id,
+            branche_id: brancheId,
+            annee_stage: parseInt(annee),
+            lieu_stage: lieu
+          });
+        } catch (error) {
+          logError("Chargement stage", error);
+        }
       }
     }
 
@@ -345,7 +462,6 @@ async function enregistrerParticipant() {
 
     alert("✅ Participant et formations enregistrés avec succès!");
 
-    // Réinitialiser le formulaire
     document.querySelector('form').reset();
     document.getElementById('region_id').value = '';
     document.getElementById('district_id').value = '';
@@ -353,13 +469,13 @@ async function enregistrerParticipant() {
       document.getElementById(`${stage}_fields`).classList.remove('active');
     });
 
-    // Recharger les données
     await mettreAJourStatistiques();
     await chargerParticipants();
 
   } catch (error) {
-    console.error("Erreur:", error);
-    alert("❌ Erreur: " + error.message);
+    logError("enregistrerParticipant", error);
+    const message = showErrorWithDetails("Erreur d'enregistrement", error);
+    alert(message);
   }
 }
 
@@ -368,6 +484,14 @@ async function enregistrerParticipant() {
 // ============================================
 async function chargerParticipants() {
   try {
+    if (!supabaseConnected) {
+      const tableBody = document.getElementById('tableBody');
+      if (tableBody) {
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">⏸️ Base de données indisponible - Mode hors ligne</td></tr>';
+      }
+      return;
+    }
+
     const recherche = document.getElementById('search') ? document.getElementById('search').value.trim() : '';
 
     let query = client
@@ -384,7 +508,6 @@ async function chargerParticipants() {
 
     if (error) throw error;
 
-    // Grouper par participant
     const participants = {};
     data.forEach(row => {
       const key = `${row.id}_${row.first_name}_${row.last_name}`;
@@ -434,9 +557,10 @@ async function chargerParticipants() {
     });
 
   } catch (error) {
-    console.error("Erreur:", error);
-    document.getElementById('tableBody').innerHTML = 
-      `<tr><td colspan="5" style="text-align: center; color: red;">Erreur: ${error.message}</td></tr>`;
+    logError("chargerParticipants", error);
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = 
+      `<tr><td colspan="5" style="text-align: center; color: red;">⚠️ Erreur chargement</td></tr>`;
   }
 }
 
@@ -445,6 +569,11 @@ async function chargerParticipants() {
 // ============================================
 async function afficherProfil(participantId) {
   try {
+    if (!supabaseConnected) {
+      alert("⚠️ Base de données indisponible");
+      return;
+    }
+
     const { data, error } = await client
       .from('parcours_participant')
       .select('*')
@@ -477,8 +606,9 @@ async function afficherProfil(participantId) {
     alert(profil);
 
   } catch (error) {
-    console.error("Erreur:", error);
-    alert("❌ Erreur: " + error.message);
+    logError("afficherProfil", error);
+    const message = showErrorWithDetails("Erreur affichage profil", error);
+    alert(message);
   }
 }
 
@@ -487,6 +617,14 @@ async function afficherProfil(participantId) {
 // ============================================
 async function chargerPromotions() {
   try {
+    if (!supabaseConnected) {
+      const container = document.getElementById('promotions_container');
+      if (container) {
+        container.innerHTML = '<p style="text-align: center; color: #999;">⏸️ Base de données indisponible</p>';
+      }
+      return;
+    }
+
     const { data, error } = await client
       .from('parcours_participant')
       .select('*')
@@ -496,7 +634,6 @@ async function chargerPromotions() {
 
     if (error) throw error;
 
-    // Grouper par année et stage
     const promotions = {};
     data.forEach(row => {
       const key = `${row.stage_code}_${row.annee_stage}`;
@@ -546,9 +683,9 @@ async function chargerPromotions() {
     }
 
   } catch (error) {
-    console.error("Erreur:", error);
-    document.getElementById('promotions_container').innerHTML = 
-      `<p style="color: red;">Erreur: ${error.message}</p>`;
+    logError("chargerPromotions", error);
+    const container = document.getElementById('promotions_container');
+    container.innerHTML = '<p style="color: red;">⚠️ Erreur chargement promotions</p>';
   }
 }
 
@@ -557,6 +694,14 @@ async function chargerPromotions() {
 // ============================================
 async function chargerStatistiques() {
   try {
+    if (!supabaseConnected) {
+      document.getElementById('stats_by_stage').innerHTML = '<p style="color: #999;">⏸️ Indisponible</p>';
+      document.getElementById('stats_by_branch').innerHTML = '<p style="color: #999;">⏸️ Indisponible</p>';
+      document.getElementById('stats_by_region').innerHTML = '<p style="color: #999;">⏸️ Indisponible</p>';
+      document.getElementById('stats_by_district').innerHTML = '<p style="color: #999;">⏸️ Indisponible</p>';
+      return;
+    }
+
     // Par stage
     const { data: stageStats } = await client
       .from('Formation')
@@ -637,7 +782,7 @@ async function chargerStatistiques() {
     document.getElementById('stats_by_district').innerHTML = districtHtml;
 
   } catch (error) {
-    console.error("Erreur statistiques:", error);
+    logError("chargerStatistiques", error);
   }
 }
 
@@ -646,6 +791,13 @@ async function chargerStatistiques() {
 // ============================================
 async function mettreAJourStatistiques() {
   try {
+    if (!supabaseConnected) {
+      document.getElementById('totalParticipants').textContent = '?';
+      document.getElementById('totalFormations').textContent = '?';
+      document.getElementById('totalBranches').textContent = '?';
+      return;
+    }
+
     const { count: countParticipants } = await client
       .from('Participants')
       .select('*', { count: 'exact', head: true });
@@ -666,6 +818,9 @@ async function mettreAJourStatistiques() {
     document.getElementById('totalBranches').textContent = uniqueBranches || 0;
 
   } catch (error) {
-    console.error("Erreur statistiques:", error);
+    logError("mettreAJourStatistiques", error);
+    document.getElementById('totalParticipants').textContent = '?';
+    document.getElementById('totalFormations').textContent = '?';
+    document.getElementById('totalBranches').textContent = '?';
   }
 }
