@@ -17,7 +17,7 @@ INSERT INTO regions (nom) VALUES
   ('Petite Côte'),
   ('Kaolack'),
   ('Casamance')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (nom) DO NOTHING;
 
 -- 2. TABLE DISTRICTS
 CREATE TABLE IF NOT EXISTS districts (
@@ -46,7 +46,7 @@ INSERT INTO branches (nom) VALUES
   ('Jaune'),
   ('Vert'),
   ('Rouge')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (nom) DO NOTHING;
 
 -- 4. TABLE STAGES
 CREATE TABLE IF NOT EXISTS stages (
@@ -63,7 +63,7 @@ INSERT INTO stages (code, nom, ordre, branche_required) VALUES
   ('C.E.P', 'Camp École Préparatoire', 2, TRUE),
   ('C.N.B', 'Camp National Branche', 3, TRUE),
   ('C.B.B', 'Camp Badge Bois', 4, FALSE)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (code) DO NOTHING;
 
 -- 5. TABLE LIEUX DE STAGE
 CREATE TABLE IF NOT EXISTS lieux_stage (
@@ -72,9 +72,7 @@ CREATE TABLE IF NOT EXISTS lieux_stage (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 6. TABLE PARTICIPANTS (MODIFIÉE)
-DROP TABLE IF EXISTS "Participants" CASCADE;
-
+-- 6. TABLE PARTICIPANTS
 CREATE TABLE IF NOT EXISTS "Participants" (
   id BIGSERIAL PRIMARY KEY,
   first_name VARCHAR(100) NOT NULL,
@@ -91,9 +89,7 @@ CREATE TABLE IF NOT EXISTS "Participants" (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 7. TABLE FORMATIONS (COMPLÈTEMENT MODIFIÉE)
-DROP TABLE IF EXISTS "Formation" CASCADE;
-
+-- 7. TABLE FORMATIONS
 CREATE TABLE IF NOT EXISTS "Formation" (
   id BIGSERIAL PRIMARY KEY,
   participant_id BIGINT NOT NULL REFERENCES "Participants"(id) ON DELETE CASCADE,
@@ -115,22 +111,28 @@ CREATE INDEX IF NOT EXISTS idx_participants_region ON "Participants"(region_id);
 CREATE INDEX IF NOT EXISTS idx_participants_district ON "Participants"(district_id);
 
 -- 9. VUE POUR AFFICHER LE PARCOURS COMPLET
-CREATE OR REPLACE VIEW parcours_participant AS
+DROP VIEW IF EXISTS parcours_participant;
+
+CREATE VIEW parcours_participant AS
 SELECT 
   p.id,
   p.first_name,
   p.last_name,
   p.fonction_actuelle,
   p.groupe_base,
-  f.id as formation_id,
-  s.code as stage_code,
-  s.nom as stage_nom,
-  s.ordre as stage_ordre,
-  b.nom as branche_nom,
+  r.nom AS region_nom,
+  d.nom AS district_nom,
+  f.id AS formation_id,
+  s.code AS stage_code,
+  s.nom AS stage_nom,
+  s.ordre AS stage_ordre,
+  b.nom AS branche_nom,
   f.annee_stage,
   f.lieu_stage,
-  f.created_at as date_enregistrement
+  f.created_at AS date_enregistrement
 FROM "Participants" p
+LEFT JOIN regions r ON p.region_id = r.id
+LEFT JOIN districts d ON p.district_id = d.id
 LEFT JOIN "Formation" f ON p.id = f.participant_id
 LEFT JOIN stages s ON f.stage_id = s.id
 LEFT JOIN branches b ON f.branche_id = b.id
